@@ -77,7 +77,7 @@ const { startTrivia, answerTrivia } = require('./commands/trivia');
 const { complimentCommand } = require('./commands/compliment');
 const { insultCommand } = require('./commands/insult');
 const { eightBallCommand } = require('./commands/eightball');
-const { lyricsCommand } = require('./commands/lyrics');
+const { lyricsCommand = require('./commands/lyrics');
 const { dareCommand } = require('./commands/dare');
 const { truthCommand } = require('./commands/truth');
 const { clearCommand } = require('./commands/clear');
@@ -289,7 +289,7 @@ async function handleMessages(sock, messageUpdate, printLog) {
         const adminCommands = ['.mute', '.unmute', '.ban', '.unban', '.promote', '.demote', '.kick', '.tagall', '.tagnotadmin', '.hidetag', '.antilink', '.antitag', '.setgdesc', '.setgname', '.setgpp'];
         const isAdminCommand = adminCommands.some(cmd => userMessage.startsWith(cmd));
 
-        const ownerCommands = ['.mode', '.autostatus', '.antidelete', '.cleartmp', '.setpp', '.clearsession', '.areact', '.autoreact', '.autotyping', '.autoread', '.pmblocker'];
+        const ownerCommands = ['.mode', '.autostatus', '.antidelete', '.cleartmp', '.setpp', '.setbio', '.clearsession', '.areact', '.autoreact', '.autotyping', '.autoread', '.pmblocker'];
         const isOwnerCommand = ownerCommands.some(cmd => userMessage.startsWith(cmd));
 
         let isSenderAdmin = false;
@@ -845,6 +845,23 @@ async function handleMessages(sock, messageUpdate, printLog) {
                 break;
             case userMessage === '.setpp':
                 await setProfilePicture(sock, chatId, message);
+                break;
+            case userMessage.startsWith('.setbio'):
+                {
+                    const bioText = rawText.slice(7).trim();
+                    if (!bioText) {
+                        await sock.sendMessage(chatId, { text: '❌ Please provide the text for your new profile bio!\nExample: `.setbio Status Active` 🤖' }, { quoted: message });
+                    } else {
+                        try {
+                            await sock.updateProfileStatus(bioText);
+                            await sock.sendMessage(chatId, { text: `✅ *Bot Profile Bio updated successfully to:*\n\n"${bioText}"` }, { quoted: message });
+                        } catch (err) {
+                            console.error('Error updating profile bio status:', err);
+                            await sock.sendMessage(chatId, { text: '❌ Failed to update profile status bio. See server console logs.' }, { quoted: message });
+                        }
+                    }
+                }
+                commandExecuted = true;
                 break;
             case userMessage.startsWith('.setgdesc'):
                 {
