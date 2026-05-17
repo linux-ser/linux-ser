@@ -12,9 +12,11 @@ global.APIs = {
     nrtm: 'https://fg-nrtm.ddns.net',
     bg: 'http://bochil.ddns.net',
     fgmods: 'https://api-fgmods.ddns.net'
+    unsplash: 'https://api.unsplash.com',
 };
 
 global.APIKeys = {
+    'https://api.unsplash.com': 'ho3cV3E8wX9LTZUGxe7VypcZcmgQ2DDiYQMlhw7tzuU',
     'https://api.xteam.xyz': 'd90a9e986e18778b',
     'https://api.lolhuman.xyz': '85faf717d0545d14074659ad',
     'https://api.neoxr.my.id': 'yourkey',
