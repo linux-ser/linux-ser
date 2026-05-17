@@ -80,7 +80,7 @@ async function imgCommand(sock, chatId, message, args) {
             caption:
 `╭───〔 📸 ɪᴍᴀɢᴇ ꜱᴇᴀʀᴄʜ 〕───╮
 │ 🔍 Qᴜᴇʀʏ : ${query}
-│ 🌐 Sᴏᴜʀᴄᴇ : Pᴇxᴇʟs Aᴘɪ
+│ 🌐 Sᴏᴜʀᴄᴇ : ᴩᴇхᴇʟꜱ ᴀᴩɪ
 │ ✅ ɪᴍᴀɢᴇ ꜰᴏᴜɴᴅ ꜱᴜᴄᴄᴇssꜰᴜʟʟʏ
 ╰────────────────────╯
 
