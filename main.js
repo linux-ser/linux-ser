@@ -136,6 +136,7 @@ const { animeCommand } = require('./commands/anime');
 const { piesCommand, piesAlias } = require('./commands/pies');
 const stickercropCommand = require('./commands/stickercrop');
 const updateCommand = require('./commands/update');
+const imgCommand = require('./commands/img');
 const removebgCommand = require('./commands/removebg');
 const { reminiCommand } = require('./commands/remini');
 const { igsCommand } = require('./commands/igs');
@@ -1091,6 +1092,9 @@ async function handleMessages(sock, messageUpdate, printLog) {
                     await updateCommand(sock, chatId, message, zipArg);
                 }
                 commandExecuted = true;
+                break;
+            case 'img':
+                await imgCommand(sock, chatId, message, args);
                 break;
             case userMessage.startsWith('.removebg') || userMessage.startsWith('.rmbg') || userMessage.startsWith('.nobg'):
                 await removebgCommand.exec(sock, message, userMessage.split(' ').slice(1));
