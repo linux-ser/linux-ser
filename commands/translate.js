@@ -58,7 +58,7 @@ async function handleTranslateCommand(sock, chatId, message, match) {
 
         if (!textToTranslate) {
             return sock.sendMessage(chatId, {
-                text: `╭───〔 🌐 ᴛʀᴀɴ<b>ꜱʟᴀᴛᴏʀ 〕───╮\n` +
+                text: `╭───〔 🌐 ᴛʀᴀɴꜱʟᴀᴛᴏʀ 〕───╮\n` +
                       `│ ❌ ɴᴏ ᴛᴇxᴛ ꜰᴏᴜɴᴅ ᴛᴏ ᴛʀᴀɴꜱʟᴀᴛᴇ\n` +
                       `╰────────────────────╯\n\n` +
                       `ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ 🧃✨`,
@@ -66,27 +66,27 @@ async function handleTranslateCommand(sock, chatId, message, match) {
             });
         }
 
-        // Try multiple translation APIs in sequence
         let translatedText = null;
-        let error = null;
 
-        // Try API 1 (Google Translate API)
+        // Engine 1: Reliable Free Google Single Target API
         try {
-            const response = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${lang}&dt=t&q=${encodeURIComponent(textToTranslate)}`);
+            const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${lang}&dt=t&q=${encodeURIComponent(textToTranslate)}`;
+            const response = await fetch(url);
             if (response.ok) {
                 const data = await response.json();
-                if (data && data[0] && data[0][0] && data[0][0][0]) {
-                    translatedText = data[0][0][0];
+                if (data && data[0]) {
+                    translatedText = data[0].map(item => item[0]).join('');
                 }
             }
         } catch (e) {
-            error = e;
+            console.error('Engine 1 translation failed:', e);
         }
 
-        // If API 1 fails, try API 2
+        // Engine 2 Fallback: MyMemory API
         if (!translatedText) {
             try {
-                const response = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(textToTranslate)}&langpair=auto|${lang}`);
+                const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(textToTranslate)}&langpair=auto|${lang}`;
+                const response = await fetch(url);
                 if (response.ok) {
                     const data = await response.json();
                     if (data && data.responseData && data.responseData.translatedText) {
@@ -94,14 +94,15 @@ async function handleTranslateCommand(sock, chatId, message, match) {
                     }
                 }
             } catch (e) {
-                error = e;
+                console.error('Engine 2 translation failed:', e);
             }
         }
 
-        // If API 2 fails, try API 3
+        // Engine 3 Fallback: Dreaded Custom Translate Endpoint
         if (!translatedText) {
             try {
-                const response = await fetch(`https://api.dreaded.site/api/translate?text=${encodeURIComponent(textToTranslate)}&lang=${lang}`);
+                const url = `https://api.dreaded.site/api/translate?text=${encodeURIComponent(textToTranslate)}&lang=${lang}`;
+                const response = await fetch(url);
                 if (response.ok) {
                     const data = await response.json();
                     if (data && data.translated) {
@@ -109,15 +110,15 @@ async function handleTranslateCommand(sock, chatId, message, match) {
                     }
                 }
             } catch (e) {
-                error = e;
+                console.error('Engine 3 translation failed:', e);
             }
         }
 
-        if (!translatedText) {
-            throw new Error('All translation APIs failed');
+        if (!translatedText || translatedText.trim() === "") {
+            throw new Error('All external translator APIs failed to parse a response.');
         }
 
-        // Output Text formatting
+        // Beautiful Success Frame Layout
         const successText = `╭───〔 🌐 ᴛʀᴀɴꜱʟᴀᴛɪᴏɴ 〕───╮\n` +
                             `│ 📥 *ɪɴᴘᴜᴛ:* ${textToTranslate}\n` +
                             `│ 🎯 *ᴛᴀʀɢᴇᴛ:* ${lang.toUpperCase()}\n` +
@@ -126,7 +127,7 @@ async function handleTranslateCommand(sock, chatId, message, match) {
                             `╰────────────────────╯\n\n` +
                             `ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ 🧃✨`;
 
-        // Modern Baileys View-Once Interactive Message with Direct Copy Button Component
+        // Interactive Copy Action payload structure
         const buttonMessage = {
             viewOnceMessage: {
                 message: {
@@ -142,18 +143,17 @@ async function handleTranslateCommand(sock, chatId, message, match) {
                                         copy_code: translatedText
                                     })
                                 }
-                            ]
+                              ]
                         }
                     }
                 }
             }
         };
 
-        // Send message with the native dynamic flow action button
         await sock.sendMessage(chatId, buttonMessage, { quoted: message });
 
     } catch (error) {
-        console.error('❌ Error in translate command:', error);
+        console.error('❌ Direct Error in translate command:', error);
         await sock.sendMessage(chatId, {
             text: `╭───〔 🌐 ᴛʀᴀɴꜱʟᴀᴛᴏʀ 〕───╮\n` +
                   `│ ❌ ꜰᴀɪʟᴇᴅ ᴛᴏ ᴛʀᴀɴꜱʟᴀᴛᴇ ᴛᴇxᴛ\n` +
