@@ -118,7 +118,7 @@ const characterCommand = require('./commands/character');
 const wastedCommand = require('./commands/wasted');
 const shipCommand = require('./commands/ship');
 const loveCommand = require('./commands/love'); 
-const groupInfoCommand = require('./commands/groupinfo');
+const { groupInfoCommand } = require('./commands/groupinfo');
 const resetlinkCommand = require('./commands/resetlink');
 const staffCommand = require('./commands/staff');
 const unbanCommand = require('./commands/unban');
@@ -752,12 +752,16 @@ async function handleMessages(sock, messageUpdate, printLog) {
                 await loveCommand(sock, chatId, message);
                 commandExecuted = true;
                 break;
-            case userMessage === '.groupinfo' || userMessage === '.infogp' || userMessage === '.infogrupo':
-                if (!isGroup) {
-                    await sock.sendMessage(chatId, { text: 'This command can only be used in groups!', ...channelInfo }, { quoted: message });
-                    return;
+            case userMessage === '.groupinfo':
+                {
+                    // ഗ്രൂപ്പിൽ ആണെങ്കിൽ മാത്രം കമാൻഡ് വർക്ക് ചെയ്യിക്കുന്നു
+                    if (!chatId.endsWith('@g.us')) {
+                        await sock.sendMessage(chatId, { text: '❌ *This command can only be used in groups!*' }, { quoted: message });
+                        break;
+                    }
+                    await groupInfoCommand(sock, chatId, message);
+                    commandExecuted = true;
                 }
-                await groupInfoCommand(sock, chatId, message);
                 break;
             case userMessage === '.resetlink' || userMessage === '.revoke' || userMessage === '.anularlink':
                 if (!isGroup) {
