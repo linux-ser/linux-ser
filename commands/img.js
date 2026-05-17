@@ -6,22 +6,24 @@ async function imgCommand(sock, chatId, message, args) {
 
         const query = args.join(' ');
 
+        // No query
         if (!query) {
 
             return await sock.sendMessage(chatId, {
                 text:
-`╭━━━〔 IMAGE SEARCH 〕━━━⬣
-┃ ❌ Enter search text
-┃ 📌 Example:
-┃ .img anime
-╰━━━━━━━━━━━━━━⬣`
+`╭───〔 📸 ɪᴍᴀɢᴇ ꜱᴇᴀʀᴄʜ 〕───╮
+│ ❌ ᴘʟᴇᴀꜱᴇ ᴇɴᴛᴇʀ ꜱᴇᴀʀᴄʜ ᴛᴇxᴛ
+│ 📌 ᴇхᴀᴍᴘʟᴇ : .ɪᴍɢ ᴀɴɪᴍᴇ
+╰────────────────────╯
+
+ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ 🧃✨`
             }, {
                 quoted: message
             });
 
         }
 
-        // Loading react
+        // Loading reaction
         await sock.sendMessage(chatId, {
             react: {
                 text: '🔍',
@@ -33,7 +35,7 @@ async function imgCommand(sock, chatId, message, args) {
         const apiKey =
             global.APIKeys['https://api.pexels.com'];
 
-        // Fetch images
+        // Fetch images from Pexels
         const response = await axios.get(
 
             `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=20`,
@@ -46,11 +48,17 @@ async function imgCommand(sock, chatId, message, args) {
 
         );
 
-        // No result
+        // No images found
         if (!response.data.photos.length) {
 
             return await sock.sendMessage(chatId, {
-                text: '❌ No images found.'
+                text:
+`╭───〔 ❌ ɴᴏ ʀᴇꜱᴜʟᴛ 〕───╮
+│ 🚫 ɴᴏ ɪᴍᴀɢᴇꜱ ᴡᴇʀᴇ ꜰᴏᴜɴᴅ
+│ 🔍 ᴛʀʏ ᴀɴᴏᴛʜᴇʀ 𝐐ᴜᴇʀʏ
+╰────────────────────╯
+
+ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ 🧃✨`
             }, {
                 quoted: message
             });
@@ -76,17 +84,19 @@ async function imgCommand(sock, chatId, message, args) {
             },
 
             caption:
-`╭━━━〔 IMAGE RESULT 〕━━━⬣
-┃ 🔎 Query : ${query}
-┃ 🌐 Source : Pexels
-┃ 👑 Linux Ser
-╰━━━━━━━━━━━━━━⬣`
+`╭───〔 📸 ɪᴍᴀɢᴇ ꜱᴇᴀʀᴄʜ 〕───╮
+│ 🔍 Qᴜᴇʀʏ : ${query}
+│ 🌐 Sᴏᴜʀᴄᴇ : Pᴇxᴇʟs Aᴘɪ
+│ ✅ ɪᴍᴀɢᴇ ꜰᴏᴜɴᴅ ꜱᴜᴄᴄꜱꜱꜰᴜʟʟʏ
+╰────────────────────╯
+
+ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ 🧃✨`
 
         }, {
             quoted: message
         });
 
-        // Success react
+        // Success reaction
         await sock.sendMessage(chatId, {
             react: {
                 text: '✅',
@@ -96,15 +106,27 @@ async function imgCommand(sock, chatId, message, args) {
 
     } catch (err) {
 
-        console.log(err);
+        console.log('IMG SEARCH ERROR:', err);
 
+        // Error message
         await sock.sendMessage(chatId, {
             text:
-`╭━━━〔 ERROR 〕━━━⬣
-┃ ❌ Failed to fetch image
-╰━━━━━━━━━━━━━━⬣`
+`╭───〔 ❌ ᴇʀʀᴏʀ 〕───╮
+│ ⚠️ ꜰᴀɪʟᴇᴅ ᴛᴏ ꜰᴇᴛᴄʜ ɪᴍᴀɢᴇ
+│ 🌐 ᴄʜᴇᴄᴋ ɪɴᴛᴇʀɴᴇᴛ ᴏʀ ᴀᴘɪ
+╰────────────────────╯
+
+ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ 🧃✨`
         }, {
             quoted: message
+        });
+
+        // Error reaction
+        await sock.sendMessage(chatId, {
+            react: {
+                text: '❌',
+                key: message.key
+            }
         });
 
     }
