@@ -26,7 +26,28 @@ async function handleTranslateCommand(sock, chatId, message, match) {
             const args = match.trim().split(' ');
             if (args.length < 2) {
                 return sock.sendMessage(chatId, {
-                    text: `*TRANSLATOR*\n\nUsage:\n1. Reply to a message with: .translate <lang> or .trt <lang>\n2. Or type: .translate <text> <lang> or .trt <text> <lang>\n\nExample:\n.translate hello fr\n.trt hello fr\n\nLanguage codes:\nfr - French\nes - Spanish\nde - German\nit - Italian\npt - Portuguese\nru - Russian\nja - Japanese\nko - Korean\nzh - Chinese\nar - Arabic\nhi - Hindi`,
+                    text: `╭───〔 🌐 ᴛʀᴀɴꜱʟᴀᴛᴏʀ 〕───╮\n` +
+                          `│ ❌ ɪɴꜱᴜꜰꜰɪᴄɪᴇɴᴛ ᴀʀɢᴜᴍᴇɴᴛ...` +
+                          `│\n` +
+                          `│ 📖 *ᴜꜱᴀɢᴇ:*\n` +
+                          `│ 1. ʀᴇᴘʟʏ: \`.translate <ʟᴀɴɢ>\`\n` +
+                          `│ 2. ᴅɪʀᴇᴄᴛ: \`.translate <ᴛᴇxᴛ> <ʟᴀɴɢ>\`\n` +
+                          `│\n` +
+                          `│ 🌐 *ʟᴀɴɢᴜᴀɢᴇ ᴄᴏᴅᴇ|:*\n` +
+                          `│ 🇺🇸 en - English    🇪🇸 es - Spanish\n` +
+                          `│ 🇫🇷 fr - French     🇩🇪 de - German\n` +
+                          `│ 🇮🇹 it - Italian    🇵🇹 pt - Portuguese\n` +
+                          `│ 🇷🇺 ru - Russian    🇯🇵 ja - Japanese\n` +
+                          `│ 🇰🇷 ko - Korean     🇨🇳 zh - Chinese\n` +
+                          `│ 🇸🇦 ar - Arabic     🇮🇳 hi - Hindi\n` +
+                          `│ 🇮🇳 ml - Malayalam  🇮🇳 ta - Tamil\n` +
+                          `│ 🇮🇩 id - Indonesian 🇹🇷 tr - Turkish\n` +
+                          `│ 🇻🇳 vi - Vietnamese 🇳🇱 nl - Dutch\n` +
+                          `│\n` +
+                          `│ 💡 *ᴇxᴀᴍᴘʟᴇ:*\n` +
+                          `│ \`.translate hello ml\`\n` +
+                          `╰────────────────────╯\n\n` +
+                          `ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ 🧃✨`,
                     quoted: message
                 });
             }
@@ -37,7 +58,10 @@ async function handleTranslateCommand(sock, chatId, message, match) {
 
         if (!textToTranslate) {
             return sock.sendMessage(chatId, {
-                text: '❌ No text found to translate. Please provide text or reply to a message.',
+                text: `╭───〔 🌐 ᴛʀᴀɴꜱʟᴀᴛᴏʀ 〕───╮\n` +
+                      `│ ❌ ɴᴏ ᴛᴇxᴛ ꜰᴏᴜɴᴅ ᴛᴏ ᴛʀᴀɴꜱʟᴀᴛᴇ\n` +
+                      `╰────────────────────╯\n\n` +
+                      `ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ 🧃✨`,
                 quoted: message
             });
         }
@@ -93,9 +117,18 @@ async function handleTranslateCommand(sock, chatId, message, match) {
             throw new Error('All translation APIs failed');
         }
 
+        // Formatted Success Response
+        const successMessage = `╭───〔 🌐 ᴛʀᴀɴꜱʟᴀᴛɪᴏɴ 〕───╮\n` +
+                               `│ 📥 *ɪɴᴘᴜᴛ:* ${textToTranslate}\n` +
+                               `│\n` +
+                               `│ 🎯 *ᴛᴀʀɢᴇᴛ:* ${lang.toUpperCase()}\n` +
+                               `│ ✨ *ʀᴇꜱᴜʟᴛ:* ${translatedText}\n` +
+                               `╰────────────────────╯\n\n` +
+                               `ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ 🧃✨`;
+
         // Send translation
         await sock.sendMessage(chatId, {
-            text: `${translatedText}`,
+            text: successMessage,
         }, {
             quoted: message
         });
@@ -103,7 +136,11 @@ async function handleTranslateCommand(sock, chatId, message, match) {
     } catch (error) {
         console.error('❌ Error in translate command:', error);
         await sock.sendMessage(chatId, {
-            text: '❌ Failed to translate text. Please try again later.\n\nUsage:\n1. Reply to a message with: .translate <lang> or .trt <lang>\n2. Or type: .translate <text> <lang> or .trt <text> <lang>',
+            text: `╭───〔 🌐 ᴛʀᴀɴꜱʟᴀᴛᴏʀ 〕───╮\n` +
+                  `│ ❌ ꜰᴀɪʟᴇᴅ ᴛᴏ ᴛʀᴀɴꜱʟᴀᴛᴇ ᴛᴇxᴛ\n` +
+                  `│ ᴘʟᴇᴀꜱᴇ ᴛʀʏ ᴀɢᴀɪɴ ʟᴀᴛᴇʀ.\n` +
+                  `╰────────────────────╯\n\n` +
+                  `ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ 🧃✨`,
             quoted: message
         });
     }
@@ -111,4 +148,4 @@ async function handleTranslateCommand(sock, chatId, message, match) {
 
 module.exports = {
     handleTranslateCommand
-}; 
+};
