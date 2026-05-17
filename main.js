@@ -1093,8 +1093,11 @@ async function handleMessages(sock, messageUpdate, printLog) {
                 }
                 commandExecuted = true;
                 break;
-            case 'img':
-                await imgCommand(sock, chatId, message, args);
+            case userMessage.startsWith('.img'):
+                {
+                    const args = rawText.split(' ').slice(1);
+                    await imgCommand(sock, chatId, message, args);
+                }
                 break;
             case userMessage.startsWith('.removebg') || userMessage.startsWith('.rmbg') || userMessage.startsWith('.nobg'):
                 await removebgCommand.exec(sock, message, userMessage.split(' ').slice(1));
