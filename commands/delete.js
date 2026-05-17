@@ -3,6 +3,11 @@ const store = require('../lib/lightweight_store');
 
 async function deleteCommand(sock, chatId, message, senderId) {
     try {
+        // ബോട്ട് റിയാക്ഷൻ താൽക്കാലികമായി 🗑️ ഇട്ടുകൊണ്ട് തുടക്കം കുറിക്കുന്നു
+        try { 
+            await sock.sendMessage(chatId, { react: { text: "🗑️", key: message.key } }); 
+        } catch {}
+
         const { isSenderAdmin, isBotAdmin } = await isAdmin(sock, chatId, senderId);
 
         // ബോട്ട് അഡ്മിൻ അല്ലെങ്കിൽ റിയാക്ഷൻ വഴി ❌ കാണിക്കുന്നു
@@ -11,8 +16,8 @@ async function deleteCommand(sock, chatId, message, senderId) {
             return;
         }
 
-        // കമാൻഡ് അടിച്ച ആൾ അഡ്മിൻ അല്ലെങ്കിൽ റിയാക്ഷൻ വഴി ❌ കാണിക്കുന്നു
-        if (!isSenderAdmin) {
+        // കമാൻഡ് അടിച്ച ആൾ അഡ്മിൻ അല്ലെങ്കിൽ ബോട്ട് ഓണർ ആണോ എന്ന് നോക്കുന്നു
+        if (!isSenderAdmin && !message.key.fromMe) {
             try { await sock.sendMessage(chatId, { react: { text: "❌", key: message.key } }); } catch {}
             return;
         }
@@ -24,99 +29,75 @@ async function deleteCommand(sock, chatId, message, senderId) {
         if (parts.length > 1) {
             const maybeNum = parseInt(parts[1], 10);
             if (!isNaN(maybeNum) && maybeNum > 0) {
-                countArg = Math.min(maybeNum, 50);
+                countArg = Math.min(maybeNum, 50); // പരമാവധി 50 മെസ്സേജുകൾ
             }
         }
         
         const ctxInfo = message.message?.extendedTextMessage?.contextInfo || {};
         const repliedParticipant = ctxInfo.participant || null;
         const repliedMsgId = ctxInfo.stanzaId || null;
-        const mentioned = Array.isArray(ctxInfo.mentionedJid) && ctxInfo.mentionedJid.length > 0 ? ctxInfo.mentionedJid[0] : null;
-        
-        if (countArg === null && !repliedMsgId && !mentioned) {
-            try { await sock.sendMessage(chatId, { react: { text: "❌", key: message.key } }); } catch {}
-            return;
-        }
 
-        const toDelete = [];
+        let toDelete = [];
 
-        // ടാഗ് ചെയ്ത മെസ്സേജ് മാത്രം എടുക്കുന്നു
-        if (repliedMsgId && repliedParticipant) {
+        // കേസ് 1: ഒരു പ്രത്യേക മെസ്സേജിന് റിപ്ലൈ ആയി കമാൻഡ് അടിക്കുമ്പോൾ
+        if (repliedMsgId) {
             toDelete.push({
                 id: repliedMsgId,
                 participant: repliedParticipant
             });
         } 
-        // വ്യക്തിയെ മെൻഷൻ ചെയ്താൽ
-        else if (mentioned && countArg > 0) {
-            const chatMessages = Array.isArray(store.messages[chatId]) ? store.messages[chatId] : [];
-            const seenIds = new Set();
-            
-            for (let i = chatMessages.length - 1; i >= 0 && toDelete.length < countArg; i--) {
-                const m = chatMessages[i];
-                const participant = m.key.participant || m.key.remoteJid;
-                if (participant === mentioned && !seenIds.has(m.key.id)) {
-                    if (!m.message?.protocolMessage) {
-                        toDelete.push({
-                            id: m.key.id,
-                            participant: participant
-                        });
-                        seenIds.add(m.key.id);
-                    }
-                }
+        // കേസ് 2: ഒന്നിനും റിപ്ലൈ ചെയ്യാതെ അക്കങ്ങൾ നൽകുമ്പോൾ (.delete 5)
+        else if (countArg) {
+            // സ്റ്റോറിൽ നിന്നും മെസ്സേജ് ലിസ്റ്റ് സുരക്ഷിതമായി എടുക്കുന്നു
+            let chatMessages = [];
+            if (store && store.messages && store.messages[chatId]) {
+                chatMessages = store.messages[chatId].array || store.messages[chatId] || [];
             }
-        } 
-        // വെറുതെ നമ്പർ മാത്രം നൽകിയാൽ
-        else if (countArg > 0) {
-            const chatMessages = Array.isArray(store.messages[chatId]) ? store.messages[chatId] : [];
-            const seenIds = new Set();
-            
-            for (let i = chatMessages.length - 1; i >= 0 && toDelete.length < countArg; i--) {
-                const m = chatMessages[i];
-                if (!seenIds.has(m.key.id)) {
-                    if (!m.message?.protocolMessage && !m.key.fromMe && m.key.id !== message.key.id) {
-                        toDelete.push({
-                            id: m.key.id,
-                            participant: m.key.participant || m.key.remoteJid
-                        });
-                        seenIds.add(m.key.id);
-                    }
-                }
-            }
-        }
 
-        if (toDelete.length === 0) {
+            if (chatMessages.length > 0) {
+                // ഗ്രൂപ്പിലെ അവസാനത്തെ മെസ്സേജുകൾ ഫിൽട്ടർ ചെയ്ത് എടുക്കുന്നു
+                const sliceMsgs = chatMessages.slice(-countArg);
+                for (const m of sliceMsgs) {
+                    if (m.key && m.key.id) {
+                        toDelete.push({
+                            id: m.key.id,
+                            participant: m.key.participant || m.participant || null
+                        });
+                    }
+                }
+            } else {
+                // സ്റ്റോർ കാലിയാണെങ്കിൽ റിയാക്ഷൻ ❌ ആക്കുന്നു
+                try { await sock.sendMessage(chatId, { react: { text: "❌", key: message.key } }); } catch {}
+                return;
+            }
+        } else {
+            // ആർഗ്യുമെന്റും റിപ്ലൈയും ഇല്ലെങ്കിൽ റിയാക്ഷൻ ❌ ആക്കുന്നു
             try { await sock.sendMessage(chatId, { react: { text: "❌", key: message.key } }); } catch {}
             return;
         }
 
-        // 🚀 ആദ്യ ഘട്ടം: ഡിലീറ്റ് പ്രൊസെസ്സ് തുടങ്ങുമ്പോൾ തന്നെ 🗑️ ഇമോജി റിയാക്ട് ചെയ്യുന്നു
-        try { 
-            await sock.sendMessage(chatId, { react: { text: "🗑️", key: message.key } }); 
-        } catch {}
-
         let deletedCount = 0;
 
+        // ലൂപ്പ് വഴി ഓരോ മെസ്സേജുകളും ഡിലീറ്റ് ആക്കുന്നു
         for (const m of toDelete) {
             try {
                 await sock.sendMessage(chatId, {
                     delete: {
                         remoteJid: chatId,
-                        fromMe: false,
+                        fromMe: m.participant ? false : true,
                         id: m.id,
                         participant: m.participant
                     }
                 });
                 deletedCount++;
-                await new Promise(r => setTimeout(r, 300));
+                await new Promise(r => setTimeout(r, 400)); // റേറ്റ് ലിമിറ്റ് ഒഴിവാക്കാൻ ചെറിയ സമയം നൽകുന്നു
             } catch (e) {
-                // error bypass
+                console.error('Bypass delete entry error:', e.message);
             }
         }
 
-        // 🚀 അവസാന ഘട്ടം: റിസൾട്ട് അനുസരിച്ച് ഇമോജി മാറ്റുന്നു
+        // ഫലം വിലയിരുത്തി റിയാക്ഷൻ അപ്ഡേറ്റ് ചെയ്യുന്നു
         if (deletedCount > 0) {
-            // വിജയകരമായി ഡിലീറ്റ് ആയാൽ 🗑️ മാറ്റി ✅ (Tick) റിയാക്ഷൻ ഇടുന്നു
             try {
                 await sock.sendMessage(chatId, {
                     react: {
@@ -126,7 +107,6 @@ async function deleteCommand(sock, chatId, message, senderId) {
                 });
             } catch (re) {}
         } else {
-            // ഡിലീറ്റ് ആയില്ലെങ്കിൽ 🗑️ മാറ്റി ❌ (Into) റിയാക്ഷൻ ഇടുന്നു
             try {
                 await sock.sendMessage(chatId, {
                     react: {
@@ -138,7 +118,10 @@ async function deleteCommand(sock, chatId, message, senderId) {
         }
 
     } catch (err) {
-        try { await sock.sendMessage(chatId, { react: { text: "❌", key: message.key } }); } catch {}
+        console.error('❌ Serious Error in delete command:', err);
+        try { 
+            await sock.sendMessage(chatId, { react: { text: "❌", key: message.key } }); 
+        } catch {}
     }
 }
 
