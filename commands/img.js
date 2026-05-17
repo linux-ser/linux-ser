@@ -13,7 +13,7 @@ async function imgCommand(sock, chatId, message, args) {
                 text:
 `╭───〔 📸 ɪᴍᴀɢᴇ ꜱᴇᴀʀᴄʜ 〕───╮
 │ ❌ ᴘʟᴇᴀꜱᴇ ᴇɴᴛᴇʀ ꜱᴇᴀʀᴄʜ ᴛᴇxᴛ
-│ 📌 ᴇхᴀᴍᴘʟᴇ : .ɪᴍɢ ᴀɴɪᴍᴇ
+│ 📌 ᴇxᴀᴍᴘʟᴇ : .ɪᴍɢ ᴀɴɪᴍᴇ
 ╰────────────────────╯
 
 ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ 🧃✨`
@@ -35,10 +35,10 @@ async function imgCommand(sock, chatId, message, args) {
         const apiKey =
             global.APIKeys['https://api.pexels.com'];
 
-        // Fetch images from Pexels
+        // Fetch relevant images
         const response = await axios.get(
 
-            `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=20`,
+            `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=3`,
 
             {
                 headers: {
@@ -48,14 +48,14 @@ async function imgCommand(sock, chatId, message, args) {
 
         );
 
-        // No images found
+        // No result
         if (!response.data.photos.length) {
 
             return await sock.sendMessage(chatId, {
                 text:
 `╭───〔 ❌ ɴᴏ ʀᴇꜱᴜʟᴛ 〕───╮
 │ 🚫 ɴᴏ ɪᴍᴀɢᴇꜱ ᴡᴇʀᴇ ꜰᴏᴜɴᴅ
-│ 🔍 ᴛʀʏ ᴀɴᴏᴛʜᴇʀ 𝐐ᴜᴇʀʏ
+│ 🔍 ᴛʀʏ ᴀɴᴏᴛʜᴇʀ ǫᴜᴇʀʏ
 ╰────────────────────╯
 
 ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ 🧃✨`
@@ -65,16 +65,10 @@ async function imgCommand(sock, chatId, message, args) {
 
         }
 
-        // Random image
-        const random =
-            response.data.photos[
-                Math.floor(
-                    Math.random() *
-                    response.data.photos.length
-                )
-            ];
+        // Best matching image
+        const bestImage = response.data.photos[0];
 
-        const imageUrl = random.src.large;
+        const imageUrl = bestImage.src.large;
 
         // Send image
         await sock.sendMessage(chatId, {
@@ -87,7 +81,7 @@ async function imgCommand(sock, chatId, message, args) {
 `╭───〔 📸 ɪᴍᴀɢᴇ ꜱᴇᴀʀᴄʜ 〕───╮
 │ 🔍 Qᴜᴇʀʏ : ${query}
 │ 🌐 Sᴏᴜʀᴄᴇ : Pᴇxᴇʟs Aᴘɪ
-│ ✅ ɪᴍᴀɢᴇ ꜰᴏᴜɴᴅ ꜱᴜᴄᴄꜱꜱꜰᴜʟʟʏ
+│ ✅ ɪᴍᴀɢᴇ ꜰᴏᴜɴᴅ ꜱᴜᴄᴄᴇssꜰᴜʟʟʏ
 ╰────────────────────╯
 
 ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ 🧃✨`
