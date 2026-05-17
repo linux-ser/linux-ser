@@ -3,13 +3,10 @@ const isAdmin = require('../lib/isAdmin');
 /**
  * ബോട്ടിന്റെ Bio / About മാറ്റാനുള്ള കമാൻഡ് (.setbio <text>)
  */
-async function setBioCommand(sock, chatId, message, senderId) {
+async function setBioCommand(sock, chatId, message, senderId, args) {
     try {
-        const text = message.message?.conversation || message.message?.extendedTextMessage?.text || '';
-        const parts = text.trim().split(/\s+/);
-        
-        // കമാൻഡിനൊപ്പം നൽകിയ ബയോ ടെക്സ്റ്റ് വേർതിരിച്ചെടുക്കുന്നു
-        const bioText = parts.slice(1).join(' ');
+        // main.js-ൽ നിന്നും പാസ് ചെയ്യുന്ന args നേരിട്ട് ടെക്സ്റ്റ് ആക്കി മാറ്റുന്നു
+        const bioText = args.join(' ');
 
         if (!bioText) {
             await sock.sendMessage(chatId, { 
@@ -21,9 +18,9 @@ async function setBioCommand(sock, chatId, message, senderId) {
         // ഗ്രൂപ്പിലാണെങ്കിൽ മാത്രം അഡ്മിൻ ചെക്കിങ് നടത്തുന്നു
         if (chatId.endsWith('@g.us')) {
             const { isSenderAdmin } = await isAdmin(sock, chatId, senderId);
-            if (!isSenderAdmin) {
+            if (!isSenderAdmin && !message.key.fromMe) {
                 await sock.sendMessage(chatId, { 
-                    text: '❌ *Error: Only group admins can change the bot bio!*' 
+                    text: '❌ *Error: Only group admins or owner can change the bot bio!*' 
                 }, { quoted: message });
                 return;
             }
@@ -44,23 +41,23 @@ async function setBioCommand(sock, chatId, message, senderId) {
             `╭─〔 ⚙️ 𝗕𝗜𝗢 𝗨𝗣𝗗𝗔𝗧𝗘 〕─╮\n` +
             `│\n` +
             `│ 📝 𝙎𝙩𝙖𝙩𝙪𝙨         :  ✅ Changed\n` +
-            `│ 💬 𝙉𝙚w 𝘽𝙞𝙤       :  ${bioText}\n` +
+            `│ 💬 𝙉𝙚𝙬 𝘽𝙞𝙤       :  ${bioText}\n` +
             `│ 👑 𝘼𝙪𝙩𝙝𝙤𝙧𝙞𝙯𝙚𝙙  :  @${senderId.split('@')[0]}\n` +
-            `│ 📅 𝘿𝙖𝙩𝖊           :  ${indianDate}\n` +
+            `│ 📅 𝘿𝙖𝙩𝙚           :  ${indianDate}\n` +
             `│ ⏰ 𝙏𝙞𝙢𝙚           :  ${indianTime}\n` +
             `│\n` +
             `╰───────────────⌁\n\n` +
-            `> ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ ⚡`;
+            `ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ 🧃✨`;
 
         await sock.sendMessage(chatId, { 
             text: bioReportMessage,
             mentions: [senderId]
-        });
+        }, { quoted: message });
 
     } catch (error) {
-        console.error('Error in setbio command:', error);
+        console.error('❌ Error in setbio command:', error);
         await sock.sendMessage(chatId, { 
-            text: '❌ *Failed to update bio. Please try again later!*' 
+            text: '❌ *Failed to update bot bio. Please try again later.*' 
         }, { quoted: message });
     }
 }
