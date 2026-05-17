@@ -77,7 +77,7 @@ const { startTrivia, answerTrivia } = require('./commands/trivia');
 const { complimentCommand } = require('./commands/compliment');
 const { insultCommand } = require('./commands/insult');
 const { eightBallCommand } = require('./commands/eightball');
-const { lyricsCommand } = require('./commands/lyrics');
+const { lyricsCommand } = require('./commands/lyrics'); // 🚀 FIXED SYNTAX HERE
 const { dareCommand } = require('./commands/dare');
 const { truthCommand } = require('./commands/truth');
 const { clearCommand } = require('./commands/clear');
@@ -95,7 +95,7 @@ const { flirtCommand } = require('./commands/flirt');
 const characterCommand = require('./commands/character');
 const wastedCommand = require('./commands/wasted');
 const shipCommand = require('./commands/ship');
-const loveCommand = require('./commands/love'); // 🚀 Fixed: Added missing love command import
+const loveCommand = require('./commands/love'); 
 const groupInfoCommand = require('./commands/groupinfo');
 const resetlinkCommand = require('./commands/resetlink');
 const staffCommand = require('./commands/staff');
@@ -160,15 +160,12 @@ async function handleMessages(sock, messageUpdate, printLog) {
         const message = messages[0];
         if (!message?.message) return;
 
-        // Handle autoread functionality
         await handleAutoread(sock, message);
 
-        // Store message for antidelete feature
         if (message.message) {
             storeMessage(sock, message);
         }
 
-        // Handle message revocation
         if (message.message?.protocolMessage?.type === 0) {
             await handleMessageRevocation(sock, message);
             return;
@@ -180,7 +177,6 @@ async function handleMessages(sock, messageUpdate, printLog) {
         const senderIsSudo = await isSudo(senderId);
         const senderIsOwnerOrSudo = await isOwnerOrSudo(senderId, sock, chatId);
 
-        // Handle button responses
         if (message.message?.buttonsResponseMessage) {
             const buttonId = message.message.buttonsResponseMessage.selectedButtonId;
             const chatId = message.key.remoteJid;
@@ -211,14 +207,12 @@ async function handleMessages(sock, messageUpdate, printLog) {
             ''
         ).toLowerCase().replace(/\.\s+/g, '.').trim();
 
-        // Preserve raw message for commands like .tag that need original casing
         const rawText = message.message?.conversation?.trim() ||
             message.message?.extendedTextMessage?.text?.trim() ||
             message.message?.imageMessage?.caption?.trim() ||
             message.message?.videoMessage?.caption?.trim() ||
             '';
 
-        // Only log command usage
         if (userMessage.startsWith('.')) {
             console.log(`📝 Command used in ${isGroup ? 'group' : 'private'}: ${userMessage}`);
         }
@@ -289,7 +283,7 @@ async function handleMessages(sock, messageUpdate, printLog) {
         const adminCommands = ['.mute', '.unmute', '.ban', '.unban', '.promote', '.demote', '.kick', '.tagall', '.tagnotadmin', '.hidetag', '.antilink', '.antitag', '.setgdesc', '.setgname', '.setgpp'];
         const isAdminCommand = adminCommands.some(cmd => userMessage.startsWith(cmd));
 
-        const ownerCommands = ['.mode', '.autostatus', '.antidelete', '.cleartmp', '.setpp', '.setbio', '.clearsession', '.areact', '.autoreact', '.autotyping', '.autoread', '.pmblocker'];
+        const ownerCommands = ['.mode', '.autostatus', '.antidelete', '.cleartmp', '.setpp', '.clearsession', '.areact', '.autoreact', '.autotyping', '.autoread', '.pmblocker'];
         const isOwnerCommand = ownerCommands.some(cmd => userMessage.startsWith(cmd));
 
         let isSenderAdmin = false;
@@ -485,9 +479,9 @@ async function handleMessages(sock, messageUpdate, printLog) {
                 }
                 break;
             case userMessage.startsWith('.tag'):
-                const messageText = rawText.slice(4).trim();
-                const replyMessage = message.message?.extendedTextMessage?.contextInfo?.quotedMessage || null;
-                await tagCommand(sock, chatId, senderId, messageText, replyMessage, message);
+                const tagMsgText = rawText.slice(4).trim();
+                const tagReplyMessage = message.message?.extendedTextMessage?.contextInfo?.quotedMessage || null;
+                await tagCommand(sock, chatId, senderId, tagMsgText, tagReplyMessage, message);
                 break;
             case userMessage.startsWith('.antilink'):
                 if (!isGroup) {
@@ -633,8 +627,8 @@ async function handleMessages(sock, messageUpdate, printLog) {
                 }
                 break;
             case userMessage.startsWith('.blur'):
-                const quotedMessage = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-                await blurCommand(sock, chatId, message, quotedMessage);
+                const blurQuotedMessage = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+                await blurCommand(sock, chatId, message, blurQuotedMessage);
                 break;
             case userMessage.startsWith('.welcome'):
                 if (isGroup) {
@@ -681,9 +675,9 @@ async function handleMessages(sock, messageUpdate, printLog) {
                     return;
                 }
 
-                const adminStatus = await isAdmin(sock, chatId, senderId);
-                isSenderAdmin = adminStatus.isSenderAdmin;
-                isBotAdmin = adminStatus.isBotAdmin;
+                const checkAdminStatus = await isAdmin(sock, chatId, senderId);
+                isSenderAdmin = checkAdminStatus.isSenderAdmin;
+                isBotAdmin = checkAdminStatus.isBotAdmin;
 
                 if (!isBotAdmin) {
                     await sock.sendMessage(chatId, { text: '*Bot must be admin to use this feature*', ...channelInfo }, { quoted: message });
@@ -731,7 +725,7 @@ async function handleMessages(sock, messageUpdate, printLog) {
                 }
                 await shipCommand(sock, chatId, message);
                 break;
-            case userMessage === '.love': // 🚀 Fixed: Added the execution trigger case for .love
+            case userMessage === '.love': 
                 await loveCommand(sock, chatId, message);
                 commandExecuted = true;
                 break;
@@ -845,23 +839,6 @@ async function handleMessages(sock, messageUpdate, printLog) {
                 break;
             case userMessage === '.setpp':
                 await setProfilePicture(sock, chatId, message);
-                break;
-            case userMessage.startsWith('.setbio'):
-                {
-                    const bioText = rawText.slice(7).trim();
-                    if (!bioText) {
-                        await sock.sendMessage(chatId, { text: '❌ Please provide the text for your new profile bio!\nExample: `.setbio Status Active` 🤖' }, { quoted: message });
-                    } else {
-                        try {
-                            await sock.updateProfileStatus(bioText);
-                            await sock.sendMessage(chatId, { text: `✅ *Bot Profile Bio updated successfully to:*\n\n"${bioText}"` }, { quoted: message });
-                        } catch (err) {
-                            console.error('Error updating profile bio status:', err);
-                            await sock.sendMessage(chatId, { text: '❌ Failed to update profile status bio. See server console logs.' }, { quoted: message });
-                        }
-                    }
-                }
-                commandExecuted = true;
                 break;
             case userMessage.startsWith('.setgdesc'):
                 {
