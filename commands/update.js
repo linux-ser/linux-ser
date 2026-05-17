@@ -40,7 +40,6 @@ async function updateViaGit() {
 function downloadFile(url, dest, visited = new Set()) {
     return new Promise((resolve, reject) => {
         try {
-            // Avoid infinite redirect loops
             if (visited.has(url) || visited.size > 5) {
                 return reject(new Error('Too many redirects'));
             }
@@ -54,7 +53,6 @@ function downloadFile(url, dest, visited = new Set()) {
                     'Accept': '*/*'
                 }
             }, res => {
-                // Handle redirects
                 if ([301, 302, 303, 307, 308].includes(res.statusCode)) {
                     const location = res.headers.location;
                     if (!location) return reject(new Error(`HTTP ${res.statusCode} without Location`));
@@ -64,7 +62,7 @@ function downloadFile(url, dest, visited = new Set()) {
                 }
 
                 if (res.statusCode !== 200) {
-                    return reject(new Error(`HTTP ${res.statusCode}`));
+                    return reject(new Error(`HTTP ${res.statusCode} - Source URL is invalid or repository is private.`));
                 }
 
                 const file = fs.createWriteStream(dest);
@@ -85,13 +83,11 @@ function downloadFile(url, dest, visited = new Set()) {
 }
 
 async function extractZip(zipPath, outDir) {
-    // Try to use platform tools; no extra npm modules required
     if (process.platform === 'win32') {
         const cmd = `powershell -NoProfile -Command "Expand-Archive -Path '${zipPath}' -DestinationPath '${outDir.replace(/\\/g, '/')}' -Force"`;
         await run(cmd);
         return;
     }
-    // Linux/mac: try unzip, else 7z, else busybox unzip
     try {
         await run('command -v unzip');
         await run(`unzip -o '${zipPath}' -d '${outDir}'`);
@@ -129,7 +125,7 @@ function copyRecursive(src, dest, ignore = [], relative = '', outList = []) {
 async function updateViaZip(sock, chatId, message, zipOverride) {
     const zipUrl = (zipOverride || settings.updateZipUrl || process.env.UPDATE_ZIP_URL || '').trim();
     if (!zipUrl) {
-        throw new Error('No ZIP URL configured. Set settings.updateZipUrl or UPDATE_ZIP_URL env.');
+        throw new Error('No update ZIP URL configured in settings.js or environment variables.');
     }
     const tmpDir = path.join(process.cwd(), 'tmp');
     if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
@@ -139,14 +135,11 @@ async function updateViaZip(sock, chatId, message, zipOverride) {
     if (fs.existsSync(extractTo)) fs.rmSync(extractTo, { recursive: true, force: true });
     await extractZip(zipPath, extractTo);
 
-    // Find the top-level extracted folder (GitHub zips create REPO-branch folder)
     const [root] = fs.readdirSync(extractTo).map(n => path.join(extractTo, n));
     const srcRoot = fs.existsSync(root) && fs.lstatSync(root).isDirectory() ? root : extractTo;
 
-    // Copy over while preserving runtime dirs/files
     const ignore = ['node_modules', '.git', 'session', 'tmp', 'tmp/', 'temp', 'data', 'baileys_store.json'];
     const copied = [];
-    // Preserve ownerNumber from existing settings.js if present
     let preservedOwner = null;
     let preservedBotOwner = null;
     try {
@@ -168,7 +161,6 @@ async function updateViaZip(sock, chatId, message, zipOverride) {
             }
         } catch {}
     }
-    // Cleanup extracted directory
     try { fs.rmSync(extractTo, { recursive: true, force: true }); } catch {}
     try { fs.rmSync(zipPath, { force: true }); } catch {}
     return { copiedFiles: copied };
@@ -176,15 +168,18 @@ async function updateViaZip(sock, chatId, message, zipOverride) {
 
 async function restartProcess(sock, chatId, message) {
     try {
-        await sock.sendMessage(chatId, { text: '✅ Update complete! Restarting…' }, { quoted: message });
+        await sock.sendMessage(chatId, {
+            text: `╭───〔 🔄 ꜱʏꜱᴛᴇᴍ 〕───╮\n` +
+                  `│ ✅ ᴜᴘᴅᴀᴛᴇ ᴄᴏᴍᴘʟᴇᴛᴇ\n` +
+                  `│ 🤖 ʀᴇꜱᴛᴀʀᴛɪɴɢ ᴘʀᴏᴄᴇꜱꜱ...\n` +
+                  `╰────────────────────╯\n\n` +
+                  `ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ 🧃✨`
+        }, { quoted: message });
     } catch {}
     try {
-        // Preferred: PM2
         await run('pm2 restart all');
         return;
     } catch {}
-    // Panels usually auto-restart when the process exits.
-    // Exit after a short delay to allow the above message to flush.
     setTimeout(() => {
         process.exit(0);
     }, 500);
@@ -195,45 +190,50 @@ async function updateCommand(sock, chatId, message, zipOverride) {
     const isOwner = await isOwnerOrSudo(senderId, sock, chatId);
     
     if (!message.key.fromMe && !isOwner) {
-        await sock.sendMessage(chatId, { text: 'Only bot owner or sudo can use .update' }, { quoted: message });
+        await sock.sendMessage(chatId, {
+            text: `╭───〔 🛡️ ꜱᴇᴄᴜʀɪᴛʏ 〕───╮\n` +
+                  `│ ❌ ᴀᴄᴄᴇꜱꜱ ᴅᴇɴɪᴇᴅ\n` +
+                  `│ ᴏɴʟʏ ᴏᴡɴᴇʀ/ꜱᴜᴅᴏ ᴄᴀɴ ᴜᴘᴅᴀᴛᴇ\n` +
+                  `╰────────────────────╯\n\n` +
+                  `ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ 🧃✨`,
+            quoted: message
+        });
         return;
     }
     try {
-
-        // --- ADDED EMOJI REACTION HERE ---
         await sock.sendMessage(chatId, { 
-            react: { 
-                text: "🛠", 
-                key: message.key 
-            } 
+            react: { text: "🛠", key: message.key } 
         });
         
-        // Minimal UX
-        await sock.sendMessage(chatId, { text: '🔄 Updating the bot, please wait…' }, { quoted: message });
+        await sock.sendMessage(chatId, {
+            text: `╭───〔 🔄 ᴜᴘᴅᴀᴛᴇ 〕───╮\n` +
+                  `│ 📥 ᴄʜᴇᴄᴋɪɴɢ ꜰᴏʀ ᴜᴘᴅᴀᴛᴇꜱ...\n` +
+                  `│ ⏳ ᴘʟᴇᴀꜱᴇ ᴡᴀɪᴛ ᴀ ᴍᴏᴍᴇɴᴛ\n` +
+                  `╰────────────────────╯\n\n` +
+                  `ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ 🧃✨`
+        }, { quoted: message });
+
         if (await hasGitRepo()) {
-            // silent
-            const { oldRev, newRev, alreadyUpToDate, commits, files } = await updateViaGit();
-            // Short message only: version info
-            const summary = alreadyUpToDate ? `✅ Already up to date: ${newRev}` : `✅ Updated to ${newRev}`;
-            console.log('[update] summary generated');
-            // silent
+            const { oldRev, newRev, alreadyUpToDate } = await updateViaGit();
             await run('npm install --no-audit --no-fund');
         } else {
-            const { copiedFiles } = await updateViaZip(sock, chatId, message, zipOverride);
-            // silent
+            await updateViaZip(sock, chatId, message, zipOverride);
         }
-        try {
-            const v = require('../settings').version || '';
-            await sock.sendMessage(chatId, { text: `✅ Update done. Restarting…` }, { quoted: message });
-        } catch {
-            await sock.sendMessage(chatId, { text: '✅ Restared Successfully\n Type .ping to check latest version.' }, { quoted: message });
-        }
+
         await restartProcess(sock, chatId, message);
     } catch (err) {
         console.error('Update failed:', err);
-        await sock.sendMessage(chatId, { text: `❌ Update failed:\n${String(err.message || err)}` }, { quoted: message });
+        await sock.sendMessage(chatId, {
+            text: `╭───〔 ❌ ꜰᴀɪʟᴜʀᴇ 〕───╮\n` +
+                  `│ ⚠️ ᴜᴘᴅᴀᴛᴇ ꜰᴀɪʟᴇᴅ\n` +
+                  `│\n` +
+                  `│ 📝 ᴇʀʀᴏʀ:\n` +
+                  `│ ${String(err.message || err)}\n` +
+                  `╰────────────────────╯\n\n` +
+                  `ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ 🧃✨`,
+            quoted: message
+        });
     }
 }
 
 module.exports = updateCommand;
-
