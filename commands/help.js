@@ -45,7 +45,7 @@ async function helpCommand(sock, chatId, message) {
 │✺│  ✦ 𝐓ɪᴍᴇ         : ${time}
 │✺│  ✦ 𝐃ᴀᴛᴇ        : ${date}
 │✺│  ✦ 𝐏ʀᴇꜰɪх      : [ . ]
-│✺│  ✦ 𝐂ᴍᴅꜱ       : 146
+│✺│  ✦ 𝐂ᴍᴅꜱ       : 147
 │✺╰───────────────
 ╰──────────────────╯
 
@@ -201,6 +201,7 @@ async function helpCommand(sock, chatId, message) {
 ┃ ✦ .play <song_name>
 ┃ ✦ .song <song_name>
 ┃ ✦ .spotify <query>
+┃ ✦ .img <query>
 ┃ ✦ .instagram <link>
 ┃ ✦ .facebook <link>
 ┃ ✦ .tiktok <link>
