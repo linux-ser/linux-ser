@@ -44,7 +44,7 @@ async function handleTranslateCommand(sock, chatId, message, match) {
                           `│ 🇮🇩 id - Indonesian 🇹🇷 tr - Turkish\n` +
                           `│ 🇻🇳 vi - Vietnamese 🇳🇱 nl - Dutch\n` +
                           `│\n` +
-                          `│ 💡 *ᴇxᴀᴍᴘʟᴇ:*\n` +
+                          `│ 💡 *ᴇхᴀᴍᴘʟᴇ:*\n` +
                           `│ \`.translate hello ta\`\n` +
                           `╰────────────────────╯\n\n` +
                           `ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ 🧃✨`,
@@ -66,27 +66,27 @@ async function handleTranslateCommand(sock, chatId, message, match) {
             });
         }
 
+        // Try multiple translation APIs in sequence
         let translatedText = null;
+        let error = null;
 
-        // Engine 1: Reliable Free Google Single Target API
+        // Try API 1 (Google Translate API)
         try {
-            const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${lang}&dt=t&q=${encodeURIComponent(textToTranslate)}`;
-            const response = await fetch(url);
+            const response = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${lang}&dt=t&q=${encodeURIComponent(textToTranslate)}`);
             if (response.ok) {
                 const data = await response.json();
-                if (data && data[0]) {
-                    translatedText = data[0].map(item => item[0]).join('');
+                if (data && data[0] && data[0][0] && data[0][0][0]) {
+                    translatedText = data[0][0][0];
                 }
             }
         } catch (e) {
-            console.error('Engine 1 translation failed:', e);
+            error = e;
         }
 
-        // Engine 2 Fallback: MyMemory API
+        // If API 1 fails, try API 2
         if (!translatedText) {
             try {
-                const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(textToTranslate)}&langpair=auto|${lang}`;
-                const response = await fetch(url);
+                const response = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(textToTranslate)}&langpair=auto|${lang}`);
                 if (response.ok) {
                     const data = await response.json();
                     if (data && data.responseData && data.responseData.translatedText) {
@@ -94,15 +94,14 @@ async function handleTranslateCommand(sock, chatId, message, match) {
                     }
                 }
             } catch (e) {
-                console.error('Engine 2 translation failed:', e);
+                error = e;
             }
         }
 
-        // Engine 3 Fallback: Dreaded Custom Translate Endpoint
+        // If API 2 fails, try API 3
         if (!translatedText) {
             try {
-                const url = `https://api.dreaded.site/api/translate?text=${encodeURIComponent(textToTranslate)}&lang=${lang}`;
-                const response = await fetch(url);
+                const response = await fetch(`https://api.dreaded.site/api/translate?text=${encodeURIComponent(textToTranslate)}&lang=${lang}`);
                 if (response.ok) {
                     const data = await response.json();
                     if (data && data.translated) {
@@ -110,50 +109,33 @@ async function handleTranslateCommand(sock, chatId, message, match) {
                     }
                 }
             } catch (e) {
-                console.error('Engine 3 translation failed:', e);
+                error = e;
             }
         }
 
-        if (!translatedText || translatedText.trim() === "") {
-            throw new Error('All external translator APIs failed to parse a response.');
+        if (!translatedText) {
+            throw new Error('All translation APIs failed');
         }
 
-        // Beautiful Success Frame Layout
-        const successText = `╭───〔 🌐 ᴛʀᴀɴꜱʟᴀᴛɪᴏɴ 〕───╮\n` +
-                            `│ 📥 *ɪɴᴘᴜᴛ:* ${textToTranslate}\n` +
-                            `│ 🎯 *ᴛᴀʀɢᴇᴛ:* ${lang.toUpperCase()}\n` +
-                            `│\n` +
-                            `│ ✨ *ʀᴇꜱᴜʟᴛ:* ${translatedText}\n` +
-                            `╰────────────────────╯\n\n` +
-                            `ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ 🧃✨`;
+        // Formatted Success Response with Tap-To-Copy box format
+        const successMessage = `╭───〔 🌐 ᴛʀᴀɴꜱʟᴀᴛɪᴏɴ 〕───╮\n` +
+                               `│ 📥 *ɪɴᴘᴜᴛ:* ${textToTranslate}\n` +
+                               `│ 🎯 *ᴛᴀʀɢᴇᴛ:* ${lang.toUpperCase()}\n` +
+                               `│\n` +
+                               `│ ✨ *ᴛᴀᴘ ʙᴇʟᴏᴡ ᴛᴏ ᴄᴏᴘʏ:* \n` +
+                               `│ \`\`\`${translatedText}\`\`\`\n` +
+                               `╰────────────────────╯\n\n` +
+                               `ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ 🧃✨`;
 
-        // Interactive Copy Action payload structure
-        const buttonMessage = {
-            viewOnceMessage: {
-                message: {
-                    interactiveMessage: {
-                        body: { text: successText },
-                        nativeFlowMessage: {
-                            buttons: [
-                                {
-                                    name: "cta_copy",
-                                    buttonParamsJson: JSON.stringify({
-                                        display_text: "📋 Copy Result",
-                                        id: "copy_translation",
-                                        copy_code: translatedText
-                                    })
-                                }
-                              ]
-                        }
-                    }
-                }
-            }
-        };
-
-        await sock.sendMessage(chatId, buttonMessage, { quoted: message });
+        // Send translation
+        await sock.sendMessage(chatId, {
+            text: successMessage,
+        }, {
+            quoted: message
+        });
 
     } catch (error) {
-        console.error('❌ Direct Error in translate command:', error);
+        console.error('❌ Error in translate command:', error);
         await sock.sendMessage(chatId, {
             text: `╭───〔 🌐 ᴛʀᴀɴꜱʟᴀᴛᴏʀ 〕───╮\n` +
                   `│ ❌ ꜰᴀɪʟᴇᴅ ᴛᴏ ᴛʀᴀɴꜱʟᴀᴛᴇ ᴛᴇxᴛ\n` +
