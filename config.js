@@ -16,7 +16,7 @@ global.APIs = {
 };
 
 global.APIKeys = {
-    'https://api.pexels.com': '8u0zzhPiizmbPpnDP0ZkEeUvJy8WMOKFUzMiGeqgRAUMkgAHlbShMMeI'
+    'https://api.pexels.com': '8u0zzhPiizmbPpnDP0ZkEeUvJy8WMOKFUzMiGeqgRAUMkgAHlbShMMeI',
     'https://api.xteam.xyz': 'd90a9e986e18778b',
     'https://api.lolhuman.xyz': '85faf717d0545d14074659ad',
     'https://api.neoxr.my.id': 'yourkey',
