@@ -11,8 +11,8 @@ global.APIs = {
     akuari2: 'https://apimu.my.id',
     nrtm: 'https://fg-nrtm.ddns.net',
     bg: 'http://bochil.ddns.net',
-    fgmods: 'https://api-fgmods.ddns.net'
-    unsplash: 'https://api.unsplash.com',
+    fgmods: 'https://api-fgmods.ddns.net',
+    unsplash: 'https://api.unsplash.com'
 };
 
 global.APIKeys = {
