@@ -44,7 +44,7 @@ async function handleTranslateCommand(sock, chatId, message, match) {
                           `│ 🇮🇩 id - Indonesian 🇹🇷 tr - Turkish\n` +
                           `│ 🇻🇳 vi - Vietnamese 🇳🇱 nl - Dutch\n` +
                           `│\n` +
-                          `│ 💡 *ᴇxᴀᴍᴘʟᴇ:*\n` +
+                          `│ 💡 *ᴇхᴀᴍᴘʟᴇ:*\n` +
                           `│ \`.translate hello ta\`\n` +
                           `╰────────────────────╯\n\n` +
                           `ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ 🧃✨`,
@@ -122,7 +122,7 @@ async function handleTranslateCommand(sock, chatId, message, match) {
                                `│ 📥 *ɪɴᴘᴜᴛ:* ${textToTranslate}\n` +
                                `│\n` +
                                `│ 🎯 *ᴛᴀʀɢᴇᴛ:* ${lang.toUpperCase()}\n` +
-                               `│ ✨ *ʀᴇ<b>ꜱᴜʟᴛ:* ${translatedText}\n` +
+                               `│ ✨ *ʀᴇꜱᴜʟᴛ:* ${translatedText}\n` +
                                `╰────────────────────╯\n\n` +
                                `ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ 🧃✨`;
 
