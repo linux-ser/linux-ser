@@ -27,13 +27,13 @@ async function handleTranslateCommand(sock, chatId, message, match) {
             if (args.length < 2) {
                 return sock.sendMessage(chatId, {
                     text: `╭───〔 🌐 ᴛʀᴀɴꜱʟᴀᴛᴏʀ 〕───╮\n` +
-                          `│ ❌ ɪɴꜱᴜꜰꜰɪᴄɪᴇɴᴛ ᴀʀɢᴜᴍᴇɴᴛ\n` +
+                          `│ ❌ ɪɴꜱᴜꜰꜰɪᴄɪᴇɴᴛ ᴀʀɢᴜᴍᴇɴᴛ...` +
                           `│\n` +
                           `│ 📖 *ᴜꜱᴀɢᴇ:*\n` +
                           `│ 1. ʀᴇᴘʟʏ: \`.translate <ʟᴀɴɢ>\`\n` +
                           `│ 2. ᴅɪʀᴇᴄᴛ: \`.translate <ᴛᴇxᴛ> <ʟᴀɴɢ>\`\n` +
                           `│\n` +
-                          `│ 🌐 *ʟᴀɴɢᴜᴀɢᴇ ᴄᴏᴅᴇꜱ:*\n` +
+                          `│ 🌐 *ʟᴀɴɢᴜᴀɢᴇ ᴄᴏᴅᴇ|:*\n` +
                           `│ 🇺🇸 en - English    🇪🇸 es - Spanish\n` +
                           `│ 🇫🇷 fr - French     🇩🇪 de - German\n` +
                           `│ 🇮🇹 it - Italian    🇵🇹 pt - Portuguese\n` +
@@ -44,7 +44,7 @@ async function handleTranslateCommand(sock, chatId, message, match) {
                           `│ 🇮🇩 id - Indonesian 🇹🇷 tr - Turkish\n` +
                           `│ 🇻🇳 vi - Vietnamese 🇳🇱 nl - Dutch\n` +
                           `│\n` +
-                          `│ 💡 *ᴇхᴀᴍᴘʟᴇ:*\n` +
+                          `│ 💡 *ᴇxᴀᴍᴘʟᴇ:*\n` +
                           `│ \`.translate hello ta\`\n` +
                           `╰────────────────────╯\n\n` +
                           `ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ 🧃✨`,
@@ -117,13 +117,12 @@ async function handleTranslateCommand(sock, chatId, message, match) {
             throw new Error('All translation APIs failed');
         }
 
-        // Formatted Success Response with Tap-To-Copy box format
+        // Formatted Success Response
         const successMessage = `╭───〔 🌐 ᴛʀᴀɴꜱʟᴀᴛɪᴏɴ 〕───╮\n` +
                                `│ 📥 *ɪɴᴘᴜᴛ:* ${textToTranslate}\n` +
-                               `│ 🎯 *ᴛᴀʀɢᴇᴛ:* ${lang.toUpperCase()}\n` +
                                `│\n` +
-                               `│ ✨ *ᴛᴀᴘ ʙᴇʟᴏᴡ ᴛᴏ ᴄᴏᴘʏ:* \n` +
-                               `│ \`\`\`${translatedText}\`\`\`\n` +
+                               `│ 🎯 *ᴛᴀʀɢᴇᴛ:* ${lang.toUpperCase()}\n` +
+                               `│ ✨ *ʀᴇ<b>ꜱᴜʟᴛ:* ${translatedText}\n` +
                                `╰────────────────────╯\n\n` +
                                `ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ 🧃✨`;
 
@@ -138,8 +137,8 @@ async function handleTranslateCommand(sock, chatId, message, match) {
         console.error('❌ Error in translate command:', error);
         await sock.sendMessage(chatId, {
             text: `╭───〔 🌐 ᴛʀᴀɴꜱʟᴀᴛᴏʀ 〕───╮\n` +
-                  `│ ❌ ꜰᴀɪʟᴇᴅ ᴛᴏ ᴛʀᴀɴꜱʟᴀᴛᴇ ᴛᴇxᴛ\n` +
-                  `│ ᴘʟᴇᴀꜱᴇ ᴛʀʏ ᴀɢᴀɪɴ ʟᴀᴛᴇʀ.\n` +
+                  `│ ❌ ꜰᴀɪʟᴇᴅ ᴛᴏ ᴛʀᴀɴ<b>ꜱʟᴀᴛᴇ ᴛᴇxᴛ\n` +
+                  `│ ᴘʟᴇᴀ<b>ꜱᴇ ᴛʀʏ ᴀɢᴀɪɴ ʟᴀᴛᴇʀ.\n` +
                   `╰────────────────────╯\n\n` +
                   `ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ 🧃✨`,
             quoted: message
