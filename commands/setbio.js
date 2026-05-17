@@ -36,7 +36,7 @@ async function setBioCommand(sock, chatId, message, senderId, args) {
         const indianDate = new Date().toLocaleDateString('en-GB', dateOptions);
         const indianTime = new Date().toLocaleTimeString('en-US', options);
 
-        // ✨ അതേ പ്രൊഫഷണൽ ബോക്സ് സ്റ്റൈൽ റിപ്പോർട്ട് ലേഔട്ട്
+        // ✨ നിങ്ങളുടെ സ്ഥിരം പ്രൊഫഷണൽ ബോക്സ് സ്റ്റൈൽ റിപ്പോർട്ട് ലേഔട്ട്
         const bioReportMessage = 
             `╭─〔 ⚙️ 𝗕𝗜𝗢 𝗨𝗣𝗗𝗔𝗧𝗘 〕─╮\n` +
             `│\n` +
