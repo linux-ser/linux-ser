@@ -58,7 +58,7 @@ async function handleTranslateCommand(sock, chatId, message, match) {
 
         if (!textToTranslate) {
             return sock.sendMessage(chatId, {
-                text: `╭───〔 🌐 ᴛʀᴀɴꜱʟᴀᴛᴏʀ 〕───╮\n` +
+                text: `╭───〔 🌐 ᴛʀᴀɴ<b>ꜱʟᴀᴛᴏʀ 〕───╮\n` +
                       `│ ❌ ɴᴏ ᴛᴇxᴛ ꜰᴏᴜɴᴅ ᴛᴏ ᴛʀᴀɴꜱʟᴀᴛᴇ\n` +
                       `╰────────────────────╯\n\n` +
                       `ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ 🧃✨`,
@@ -117,7 +117,7 @@ async function handleTranslateCommand(sock, chatId, message, match) {
             throw new Error('All translation APIs failed');
         }
 
-        // Main Text Layout
+        // Output Text formatting
         const successText = `╭───〔 🌐 ᴛʀᴀɴꜱʟᴀᴛɪᴏɴ 〕───╮\n` +
                             `│ 📥 *ɪɴᴘᴜᴛ:* ${textToTranslate}\n` +
                             `│ 🎯 *ᴛᴀʀɢᴇᴛ:* ${lang.toUpperCase()}\n` +
@@ -126,22 +126,31 @@ async function handleTranslateCommand(sock, chatId, message, match) {
                             `╰────────────────────╯\n\n` +
                             `ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ 🧃✨`;
 
-        // Sending Message with Interactive Copy Button
-        // This utilizes Baileys Template/Hydrated button pattern for native Copy implementation
-        await sock.sendMessage(chatId, {
-            text: successText,
-            templateButtons: [
-                {
-                    index: 1,
-                    quickReplyButton: {
-                        displayText: '📋 Copy Result',
-                        id: `.copytext ${translatedText}` // Bot-side receiver to auto-copy or reply back text cleanly
+        // Modern Baileys View-Once Interactive Message with Direct Copy Button Component
+        const buttonMessage = {
+            viewOnceMessage: {
+                message: {
+                    interactiveMessage: {
+                        body: { text: successText },
+                        nativeFlowMessage: {
+                            buttons: [
+                                {
+                                    name: "cta_copy",
+                                    buttonParamsJson: JSON.stringify({
+                                        display_text: "📋 Copy Result",
+                                        id: "copy_translation",
+                                        copy_code: translatedText
+                                    })
+                                }
+                            ]
+                        }
                     }
                 }
-            ]
-        }, {
-            quoted: message
-        });
+            }
+        };
+
+        // Send message with the native dynamic flow action button
+        await sock.sendMessage(chatId, buttonMessage, { quoted: message });
 
     } catch (error) {
         console.error('❌ Error in translate command:', error);
