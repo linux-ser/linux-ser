@@ -11,7 +11,7 @@ async function imgCommand(sock, chatId, message, args) {
             return await sock.sendMessage(chatId, {
                 text:
 `╭━━━〔 IMAGE SEARCH 〕━━━⬣
-┃ ❌ Please enter search text
+┃ ❌ Enter search text
 ┃ 📌 Example:
 ┃ .img anime
 ╰━━━━━━━━━━━━━━⬣`
@@ -21,7 +21,7 @@ async function imgCommand(sock, chatId, message, args) {
 
         }
 
-        // React
+        // Loading react
         await sock.sendMessage(chatId, {
             react: {
                 text: '🔍',
@@ -29,29 +29,44 @@ async function imgCommand(sock, chatId, message, args) {
             }
         });
 
-        // Unsplash API key
+        // API Key
         const apiKey =
-            global.APIKeys['https://api.unsplash.com'];
+            global.APIKeys['https://api.pexels.com'];
 
-        // API URL
-        const url =
-`https://api.unsplash.com/photos/random?query=${encodeURIComponent(query)}&client_id=${apiKey}`;
+        // Fetch images
+        const response = await axios.get(
 
-        // Fetch image
-        const response = await axios.get(url);
+            `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=20`,
 
-        // No image
-        if (!response.data?.urls?.regular) {
+            {
+                headers: {
+                    Authorization: apiKey
+                }
+            }
+
+        );
+
+        // No result
+        if (!response.data.photos.length) {
 
             return await sock.sendMessage(chatId, {
-                text: '❌ No image found.'
+                text: '❌ No images found.'
             }, {
                 quoted: message
             });
 
         }
 
-        const imageUrl = response.data.urls.regular;
+        // Random image
+        const random =
+            response.data.photos[
+                Math.floor(
+                    Math.random() *
+                    response.data.photos.length
+                )
+            ];
+
+        const imageUrl = random.src.large;
 
         // Send image
         await sock.sendMessage(chatId, {
@@ -63,8 +78,8 @@ async function imgCommand(sock, chatId, message, args) {
             caption:
 `╭━━━〔 IMAGE RESULT 〕━━━⬣
 ┃ 🔎 Query : ${query}
-┃ 🌐 Source : Unsplash
-┃ 👑 𝐋ɪɴᴜх 𝐒ᴇʀ
+┃ 🌐 Source : Pexels
+┃ 👑 Linux Ser
 ╰━━━━━━━━━━━━━━⬣`
 
         }, {
@@ -81,7 +96,7 @@ async function imgCommand(sock, chatId, message, args) {
 
     } catch (err) {
 
-        console.error('IMG ERROR:', err);
+        console.log(err);
 
         await sock.sendMessage(chatId, {
             text:
