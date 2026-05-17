@@ -113,6 +113,7 @@ const textmakerCommand = require('./commands/textmaker');
 const { handleAntideleteCommand, handleMessageRevocation, storeMessage } = require('./commands/antidelete');
 const clearTmpCommand = require('./commands/cleartmp');
 const setProfilePicture = require('./commands/setpp');
+const setBioCommand = require('./commands/setbio');
 const { setGroupDescription, setGroupName, setGroupPhoto } = require('./commands/groupmanage');
 const instagramCommand = require('./commands/instagram');
 const facebookCommand = require('./commands/facebook');
@@ -839,6 +840,14 @@ async function handleMessages(sock, messageUpdate, printLog) {
                 break;
             case userMessage === '.setpp':
                 await setProfilePicture(sock, chatId, message);
+                break;
+            case userMessage.startsWith('.setbio '):
+                {
+                    onst parts = rawText.trim().split(/\s+/);
+                    const args = parts.slice(1);
+                    await setBioCommand(sock, chatId, message, senderId, args);
+                    commandExecuted = true;
+                }
                 break;
             case userMessage.startsWith('.setgdesc'):
                 {
