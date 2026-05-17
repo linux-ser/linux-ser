@@ -285,7 +285,12 @@ async function handleMessages(sock, messageUpdate, printLog) {
             } catch (e) { }
         }
 
+
         if (!userMessage.startsWith('.')) {
+
+            // RANDOM AUTO REACTION
+            await addCommandReaction(sock, message);
+
             await handleAutotypingForMessage(sock, chatId, userMessage);
 
             if (isGroup) {
@@ -293,13 +298,20 @@ async function handleMessages(sock, messageUpdate, printLog) {
                 await handleMentionDetection(sock, chatId, message);
 
                 if (isPublic || isOwnerOrSudoCheck) {
-                    await handleChatbotResponse(sock, chatId, message, userMessage, senderId);
-                }
-            }
+                    await handleChatbotResponse(
+                        sock,
+                        chatId,
+                        message,
+                        userMessage,
+                        senderId
+                    );
+                 }
+              }
+
             return;
         }
         
-        if (!isPublic && !isOwnerOrSudoCheck) {
+        if (!isPublic && !isOwnerOrSudoCh
             return;
         }
 
