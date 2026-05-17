@@ -27,13 +27,13 @@ async function handleTranslateCommand(sock, chatId, message, match) {
             if (args.length < 2) {
                 return sock.sendMessage(chatId, {
                     text: `╭───〔 🌐 ᴛʀᴀɴꜱʟᴀᴛᴏʀ 〕───╮\n` +
-                          `│ ❌ ɪɴꜱᴜꜰꜰɪᴄɪᴇɴᴛ ᴀʀɢᴜᴍᴇɴᴛ...` +
+                          `│ ❌ ɪɴꜱᴜꜰꜰɪᴄɪᴇɴᴛ ᴀʀɢᴜᴍᴇɴᴛ\n` +
                           `│\n` +
                           `│ 📖 *ᴜꜱᴀɢᴇ:*\n` +
                           `│ 1. ʀᴇᴘʟʏ: \`.translate <ʟᴀɴɢ>\`\n` +
                           `│ 2. ᴅɪʀᴇᴄᴛ: \`.translate <ᴛᴇxᴛ> <ʟᴀɴɢ>\`\n` +
                           `│\n` +
-                          `│ 🌐 *ʟᴀɴɢᴜᴀɢᴇ ᴄᴏᴅᴇ|:*\n` +
+                          `│ 🌐 *ʟᴀɴɢᴜᴀɢᴇ ᴄᴏᴅᴇꜱ:*\n` +
                           `│ 🇺🇸 en - English    🇪🇸 es - Spanish\n` +
                           `│ 🇫🇷 fr - French     🇩🇪 de - German\n` +
                           `│ 🇮🇹 it - Italian    🇵🇹 pt - Portuguese\n` +
@@ -45,7 +45,7 @@ async function handleTranslateCommand(sock, chatId, message, match) {
                           `│ 🇻🇳 vi - Vietnamese 🇳🇱 nl - Dutch\n` +
                           `│\n` +
                           `│ 💡 *ᴇxᴀᴍᴘʟᴇ:*\n` +
-                          `│ \`.translate hello ml\`\n` +
+                          `│ \`.translate hello ta\`\n` +
                           `╰────────────────────╯\n\n` +
                           `ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ 🧃✨`,
                     quoted: message
@@ -117,18 +117,28 @@ async function handleTranslateCommand(sock, chatId, message, match) {
             throw new Error('All translation APIs failed');
         }
 
-        // Formatted Success Response
-        const successMessage = `╭───〔 🌐 ᴛʀᴀɴꜱʟᴀᴛɪᴏɴ 〕───╮\n` +
-                               `│ 📥 *ɪɴᴘᴜᴛ:* ${textToTranslate}\n` +
-                               `│\n` +
-                               `│ 🎯 *ᴛᴀʀɢᴇᴛ:* ${lang.toUpperCase()}\n` +
-                               `│ ✨ *ʀᴇꜱᴜʟᴛ:* ${translatedText}\n` +
-                               `╰────────────────────╯\n\n` +
-                               `ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ 🧃✨`;
+        // Main Text Layout
+        const successText = `╭───〔 🌐 ᴛʀᴀɴꜱʟᴀᴛɪᴏɴ 〕───╮\n` +
+                            `│ 📥 *ɪɴᴘᴜᴛ:* ${textToTranslate}\n` +
+                            `│ 🎯 *ᴛᴀʀɢᴇᴛ:* ${lang.toUpperCase()}\n` +
+                            `│\n` +
+                            `│ ✨ *ʀᴇꜱᴜʟᴛ:* ${translatedText}\n` +
+                            `╰────────────────────╯\n\n` +
+                            `ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ 🧃✨`;
 
-        // Send translation
+        // Sending Message with Interactive Copy Button
+        // This utilizes Baileys Template/Hydrated button pattern for native Copy implementation
         await sock.sendMessage(chatId, {
-            text: successMessage,
+            text: successText,
+            templateButtons: [
+                {
+                    index: 1,
+                    quickReplyButton: {
+                        displayText: '📋 Copy Result',
+                        id: `.copytext ${translatedText}` // Bot-side receiver to auto-copy or reply back text cleanly
+                    }
+                }
+            ]
         }, {
             quoted: message
         });
