@@ -1,29 +1,23 @@
 const axios = require('axios');
 
 async function imgCommand(sock, chatId, message, args) {
-
     try {
 
         const query = args.join(' ');
 
-        // No query
         if (!query) {
-
             return await sock.sendMessage(chatId, {
                 text:
-`╭───〔 📸 ɪᴍᴀɢᴇ ꜱᴇᴀʀᴄʜ 〕───╮
-│ ❌ ᴘʟᴇᴀꜱᴇ ᴇɴᴛᴇʀ ꜱᴇᴀʀᴄʜ ᴛᴇxᴛ
-│ 📌 ᴇxᴀᴍᴘʟᴇ : .ɪᴍɢ ᴀɴɪᴍᴇ
-╰────────────────────╯
-
-ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ 🧃✨`
+`╭───〔 📸 IMAGE SEARCH 〕───╮
+│ ❌ Please enter search text
+│ 📌 Example : .img anime
+╰────────────────────╯`
             }, {
                 quoted: message
             });
-
         }
 
-        // Loading reaction
+        // Loading Reaction
         await sock.sendMessage(chatId, {
             react: {
                 text: '🔍',
@@ -31,46 +25,52 @@ async function imgCommand(sock, chatId, message, args) {
             }
         });
 
-        // API Key
-        const apiKey =
-            global.APIKeys['https://api.pexels.com'];
+        const apiKey = global.BING_API_KEY;
 
-        // Fetch relevant images
-        const response = await axios.get(
-
-            `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=3`,
-
-            {
-                headers: {
-                    Authorization: apiKey
-                }
-            }
-
-        );
-
-        // No result
-        if (!response.data.photos.length) {
-
+        if (!apiKey) {
             return await sock.sendMessage(chatId, {
-                text:
-`╭───〔 ❌ ɴᴏ ʀᴇꜱᴜʟᴛ 〕───╮
-│ 🚫 ɴᴏ ɪᴍᴀɢᴇꜱ ᴡᴇʀᴇ ꜰᴏᴜɴᴅ
-│ 🔍 ᴛʀʏ ᴀɴᴏᴛʜᴇʀ ǫᴜᴇʀʏ
-╰────────────────────╯
-
-ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ 🧃✨`
+                text: '❌ Bing API Key Missing'
             }, {
                 quoted: message
             });
-
         }
 
-        // Best matching image
-        const bestImage = response.data.photos[0];
+        // Bing Image Search API
+        const response = await axios.get(
+            'https://api.bing.microsoft.com/v7.0/images/search',
+            {
+                headers: {
+                    'Ocp-Apim-Subscription-Key': apiKey
+                },
+                params: {
+                    q: query,
+                    count: 10,
+                    safeSearch: 'Moderate'
+                }
+            }
+        );
 
-        const imageUrl = bestImage.src.large;
+        const results = response.data.value;
 
-        // Send image
+        if (!results || results.length === 0) {
+            return await sock.sendMessage(chatId, {
+                text:
+`╭───〔 ❌ NO RESULT 〕───╮
+│ 🚫 No images found
+│ 🔍 Try another query
+╰────────────────────╯`
+            }, {
+                quoted: message
+            });
+        }
+
+        // Random Best Result
+        const randomImage =
+            results[Math.floor(Math.random() * results.length)];
+
+        const imageUrl = randomImage.contentUrl;
+
+        // Send Image
         await sock.sendMessage(chatId, {
 
             image: {
@@ -78,19 +78,17 @@ async function imgCommand(sock, chatId, message, args) {
             },
 
             caption:
-`╭───〔 📸 ɪᴍᴀɢᴇ ꜱᴇᴀʀᴄʜ 〕───╮
-│ 🔍 Qᴜᴇʀʏ : ${query}
-│ 🌐 Sᴏᴜʀᴄᴇ : ᴩᴇхᴇʟꜱ ᴀᴩɪ
-│ ✅ ɪᴍᴀɢᴇ ꜰᴏᴜɴᴅ ꜱᴜᴄᴄᴇssꜰᴜʟʟʏ
-╰────────────────────╯
-
-ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ 🧃✨`
+`╭───〔 📸 IMAGE SEARCH 〕───╮
+│ 🔍 Query : ${query}
+│ 🌐 Source : Bing Search API
+│ ✅ Image Found Successfully
+╰────────────────────╯`
 
         }, {
             quoted: message
         });
 
-        // Success reaction
+        // Success Reaction
         await sock.sendMessage(chatId, {
             react: {
                 text: '✅',
@@ -100,31 +98,25 @@ async function imgCommand(sock, chatId, message, args) {
 
     } catch (err) {
 
-        console.log('IMG SEARCH ERROR:', err);
+        console.log('BING IMG ERROR:', err.response?.data || err.message);
 
-        // Error message
         await sock.sendMessage(chatId, {
             text:
-`╭───〔 ❌ ᴇʀʀᴏʀ 〕───╮
-│ ⚠️ ꜰᴀɪʟᴇᴅ ᴛᴏ ꜰᴇᴛᴄʜ ɪᴍᴀɢᴇ
-│ 🌐 ᴄʜᴇᴄᴋ ɪɴᴛᴇʀɴᴇᴛ ᴏʀ ᴀᴘɪ
-╰────────────────────╯
-
-ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ 🧃✨`
+`╭───〔 ❌ ERROR 〕───╮
+│ ⚠️ Failed to fetch image
+│ 🌐 Check API Key or Internet
+╰────────────────────╯`
         }, {
             quoted: message
         });
 
-        // Error reaction
         await sock.sendMessage(chatId, {
             react: {
                 text: '❌',
                 key: message.key
             }
         });
-
     }
-
 }
 
 module.exports = imgCommand;
