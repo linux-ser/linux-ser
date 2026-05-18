@@ -25,29 +25,8 @@ setInterval(() => {
     console.log('🧹 Temp folder auto-cleaned');
 }, 3 * 60 * 60 * 1000);
 
-// 🧹 5 Minutes Auto-Cleaner for baileys_store.json Data
-setInterval(() => {
-    try {
-        const storePath = path.join(process.cwd(), 'baileys_store.json');
-        
-        if (fs.existsSync(storePath)) {
-            // ഫയൽ പൂർണ്ണമായി കളയാതെ അതിലെ ചാറ്റ് മെസ്സേജുകൾ മാത്രം ക്ലീൻ ആക്കുന്നു
-            const emptyStore = {
-                chats: [],
-                messages: {},
-                contacts: {}
-            };
-            
-            fs.writeFileSync(storePath, JSON.stringify(emptyStore, null, 2));
-            console.log('🧹 [STORAGE] baileys_store.json cleaned automatically (Every 5 Mins)');
-        }
-    } catch (error) {
-        console.error('❌ Error cleaning store file:', error.message);
-    }
-}, 5 * 60 * 1000); // 5 മിനിറ്റ് തികയുമ്പോൾ ഇത് തനിയെ റൺ ആകും
 
-
-const settings = require('./settings');
+const settings = require('./settings')
 require('./config.js');
 const { isBanned } = require('./lib/isBanned');
 const yts = require('yt-search');
