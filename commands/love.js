@@ -20,7 +20,7 @@ module.exports = async function loveCommand(sock, chatId, message) {
         // 3. അവസാനം വരാൻ ആഗ്രഹിച്ച ടെക്സ്റ്റ് മാത്രം ലോഡ് ആവുന്നു
         await delay(1000);
         await sock.sendMessage(chatId, {
-            text: "💌 𝐋ᴏᴠᴇ 𝐒ᴇɴᴛ ʙʏ 𝐋ɪɴᴜx 𝐒ᴇʀ 🧃🕊️",
+            text: "💌 𝐋ᴏᴠᴇ 𝐒ᴇɴᴛ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ 🧃🕊️",
             edit: sentMsg.key,
             mentions: [] // ആരെയും മെൻഷൻ ചെയ്യില്ല
         });
