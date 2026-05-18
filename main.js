@@ -311,8 +311,8 @@ async function handleMessages(sock, messageUpdate, printLog) {
             return;
         }
         
-        if (!isPublic && !isOwnerOrSudoCh
-            return;
+        if (!isPublic && !isOwnerOrSudoCheck) {
+        return;
         }
 
         const adminCommands = ['.mute', '.unmute', '.ban', '.unban', '.promote', '.demote', '.kick', '.tagall', '.tagnotadmin', '.hidetag', '.antilink', '.antitag', '.setgdesc', '.setgname', '.setgpp'];
