@@ -26,7 +26,7 @@ setInterval(() => {
 }, 3 * 60 * 60 * 1000);
 
 
-const settings = require('./settings')
+const settings = require('./settings');
 require('./config.js');
 const { isBanned } = require('./lib/isBanned');
 const yts = require('yt-search');
