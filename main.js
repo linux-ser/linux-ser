@@ -409,10 +409,11 @@ async function handleMessages(sock, messageUpdate, printLog) {
                 const text = userMessage.slice(4).trim();
                 await ttsCommand(sock, chatId, text, message);
                 break;
-            case 'tovn':
-            case 'vn':
-            case 'ptt':
+            case userMessage === '.tovn':
+            case userMessage === '.vn':
+            case userMessage === '.ptt':
                 await tovnCommand(sock, chatId, message);
+                commandExecuted = true;
                 break;
             case userMessage.startsWith('.delete') || userMessage.startsWith('.del'):
                 await deleteCommand(sock, chatId, message, senderId);
