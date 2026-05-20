@@ -145,6 +145,7 @@ const { anticallCommand, readState: readAnticallState } = require('./commands/an
 const { pmblockerCommand, readState: readPmBlockerState } = require('./commands/pmblocker');
 const settingsCommand = require('./commands/settings');
 const soraCommand = require('./commands/sora');
+const tovnCommand = require('./commands/tovn');
 
 // Global settings
 global.packname = settings.packname;
@@ -407,6 +408,11 @@ async function handleMessages(sock, messageUpdate, printLog) {
             case userMessage.startsWith('.tts'):
                 const text = userMessage.slice(4).trim();
                 await ttsCommand(sock, chatId, text, message);
+                break;
+            case 'tovn':
+            case 'ptt':
+            case 'vn':
+                await tovnCommand(sock, chatId, message);
                 break;
             case userMessage.startsWith('.delete') || userMessage.startsWith('.del'):
                 await deleteCommand(sock, chatId, message, senderId);
