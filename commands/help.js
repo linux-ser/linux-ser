@@ -45,7 +45,7 @@ async function helpCommand(sock, chatId, message) {
 │✺│  ✦ 𝐓ɪᴍᴇ         : ${time}
 │✺│  ✦ 𝐃ᴀᴛᴇ        : ${date}
 │✺│  ✦ 𝐏ʀᴇꜰɪх      : [ . ]
-│✺│  ✦ 𝐂ᴍᴅꜱ       : 147
+│✺│  ✦ 𝐂ᴍᴅꜱ       : 141
 │✺╰───────────────
 ╰──────────────────╯
 
@@ -138,14 +138,6 @@ async function helpCommand(sock, chatId, message) {
 ┃ ✦ .tovn
 ╰━━━━━━━━━━━━━━━━━━╯
 
-╭━━━❲ 𝐏ɪᴇꜱ ❳━━━╮
-┃ ✦ .pies <country>
-┃ ✦ .china
-┃ ✦ .indonesia
-┃ ✦ .japan
-┃ ✦ .korea
-┃ ✦ .hijab
-╰━━━━━━━━━━━━━━━━━━╯
 
 ╭━━━❲ 𝐆ᴀᴍᴇ ❳━━━╮
 ┃ ✦ .tictactoe @user
