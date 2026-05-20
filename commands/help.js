@@ -138,7 +138,6 @@ async function helpCommand(sock, chatId, message) {
 ┃ ✦ .tovn
 ╰━━━━━━━━━━━━━━━━━━╯
 
-
 ╭━━━❲ 𝐆ᴀᴍᴇ ❳━━━╮
 ┃ ✦ .tictactoe @user
 ┃ ✦ .hangman
