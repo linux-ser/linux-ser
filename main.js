@@ -53,6 +53,7 @@ const isAdmin = require('./lib/isAdmin');
 const warnCommand = require('./commands/warn');
 const warningsCommand = require('./commands/warnings');
 const ttsCommand = require('./commands/tts');
+const tovnCommand = require('./commands/tovn');
 const { tictactoeCommand, handleTicTacToeMove } = require('./commands/tictactoe');
 const { incrementMessageCount, topMembers } = require('./commands/topmembers');
 const ownerCommand = require('./commands/owner');
@@ -145,7 +146,6 @@ const { anticallCommand, readState: readAnticallState } = require('./commands/an
 const { pmblockerCommand, readState: readPmBlockerState } = require('./commands/pmblocker');
 const settingsCommand = require('./commands/settings');
 const soraCommand = require('./commands/sora');
-const tovnCommand = require('./commands/tovn');
 
 // Global settings
 global.packname = settings.packname;
@@ -410,8 +410,8 @@ async function handleMessages(sock, messageUpdate, printLog) {
                 await ttsCommand(sock, chatId, text, message);
                 break;
             case 'tovn':
-            case 'ptt':
             case 'vn':
+            case 'ptt':
                 await tovnCommand(sock, chatId, message);
                 break;
             case userMessage.startsWith('.delete') || userMessage.startsWith('.del'):
