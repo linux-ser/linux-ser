@@ -2,7 +2,7 @@ const gTTS = require('gtts');
 const fs = require('fs');
 const path = require('path');
 
-const { toPTT } = require('./converter'); // adjust path if needed
+const { toPTT } = require('../lib/converter'); // adjust path if needed
 
 async function ttsCommand(sock, chatId, text, message, language = 'en') {
 
