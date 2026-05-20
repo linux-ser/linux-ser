@@ -1,16 +1,17 @@
+const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
 const { toPTT } = require('../lib/converter');
 
 async function tovnCommand(sock, chatId, message) {
 
-    const quoted = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-
-    if (!quoted) {
-        return sock.sendMessage(chatId, {
-            text: 'Reply to audio or video!'
-        }, { quoted: message });
-    }
-
     try {
+
+        const quoted = message.message?.extendedTextMessage?.contextInfo;
+
+        if (!quoted || !quoted.quotedMessage) {
+            return sock.sendMessage(chatId, {
+                text: 'Reply to audio or video!'
+            }, { quoted: message });
+        }
 
         await sock.sendMessage(chatId, {
             react: {
@@ -19,30 +20,30 @@ async function tovnCommand(sock, chatId, message) {
             }
         });
 
-        let mediaMessage;
+        const qmsg = quoted.quotedMessage;
+
+        let stream;
         let ext = 'mp3';
 
         // Audio
-        if (quoted.audioMessage) {
+        if (qmsg.audioMessage) {
 
-            mediaMessage = {
-                message: {
-                    audioMessage: quoted.audioMessage
-                }
-            };
+            stream = await downloadContentFromMessage(
+                qmsg.audioMessage,
+                'audio'
+            );
 
             ext = 'mp3';
 
         }
 
         // Video
-        else if (quoted.videoMessage) {
+        else if (qmsg.videoMessage) {
 
-            mediaMessage = {
-                message: {
-                    videoMessage: quoted.videoMessage
-                }
-            };
+            stream = await downloadContentFromMessage(
+                qmsg.videoMessage,
+                'video'
+            );
 
             ext = 'mp4';
 
@@ -56,10 +57,14 @@ async function tovnCommand(sock, chatId, message) {
 
         }
 
-        // Download media
-        const buffer = await sock.downloadMediaMessage(mediaMessage);
+        // Buffer build
+        let buffer = Buffer.from([]);
 
-        // Convert to WhatsApp Voice Note
+        for await (const chunk of stream) {
+            buffer = Buffer.concat([buffer, chunk]);
+        }
+
+        // Convert to WhatsApp voice
         const voiceBuffer = await toPTT(buffer, ext);
 
         // Send voice note
