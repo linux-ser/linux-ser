@@ -1,17 +1,16 @@
-const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
 const { toPTT } = require('../lib/converter');
 
 async function tovnCommand(sock, chatId, message) {
 
+    const quoted = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+
+    if (!quoted) {
+        return sock.sendMessage(chatId, {
+            text: 'Reply to audio or video!'
+        }, { quoted: message });
+    }
+
     try {
-
-        const quoted = message.message?.extendedTextMessage?.contextInfo;
-
-        if (!quoted || !quoted.quotedMessage) {
-            return sock.sendMessage(chatId, {
-                text: 'Reply to audio or video!'
-            }, { quoted: message });
-        }
 
         await sock.sendMessage(chatId, {
             react: {
@@ -20,30 +19,30 @@ async function tovnCommand(sock, chatId, message) {
             }
         });
 
-        const qmsg = quoted.quotedMessage;
-
-        let stream;
+        let mediaMessage;
         let ext = 'mp3';
 
         // Audio
-        if (qmsg.audioMessage) {
+        if (quoted.audioMessage) {
 
-            stream = await downloadContentFromMessage(
-                qmsg.audioMessage,
-                'audio'
-            );
+            mediaMessage = {
+                message: {
+                    audioMessage: quoted.audioMessage
+                }
+            };
 
             ext = 'mp3';
 
         }
 
         // Video
-        else if (qmsg.videoMessage) {
+        else if (quoted.videoMessage) {
 
-            stream = await downloadContentFromMessage(
-                qmsg.videoMessage,
-                'video'
-            );
+            mediaMessage = {
+                message: {
+                    videoMessage: quoted.videoMessage
+                }
+            };
 
             ext = 'mp4';
 
@@ -57,14 +56,10 @@ async function tovnCommand(sock, chatId, message) {
 
         }
 
-        // Buffer build
-        let buffer = Buffer.from([]);
+        // Download media
+        const buffer = await sock.downloadMediaMessage(mediaMessage);
 
-        for await (const chunk of stream) {
-            buffer = Buffer.concat([buffer, chunk]);
-        }
-
-        // Convert to WhatsApp voice
+        // Convert to WhatsApp Voice Note
         const voiceBuffer = await toPTT(buffer, ext);
 
         // Send voice note
