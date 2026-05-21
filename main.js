@@ -42,6 +42,7 @@ const { autoreadCommand, isAutoreadEnabled, handleAutoread } = require('./comman
 
 // Command imports
 const tagAllCommand = require('./commands/tagall');
+const pinCommand = require('./commands/pin');
 const helpCommand = require('./commands/help');
 const banCommand = require('./commands/ban');
 const { promoteCommand } = require('./commands/promote');
@@ -485,6 +486,10 @@ async function handleMessages(sock, messageUpdate, printLog) {
                 break;
             case userMessage === '.owner':
                 await ownerCommand(sock, chatId);
+                break;
+            case userMessage === '.pin':
+                await pinCommand(sock, chatId, message);
+                commandExecuted = true;
                 break;
             case userMessage === '.tagall':
                 await tagAllCommand(sock, chatId, senderId, message);
