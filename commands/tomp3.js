@@ -3,6 +3,7 @@ const {
 } = require('@whiskeysockets/baileys');
 
 const ffmpeg = require('fluent-ffmpeg');
+const NodeID3 = require('node-id3');
 
 const fs = require('fs');
 const path = require('path');
@@ -102,7 +103,7 @@ async function tomp3Command(sock, chatId, message) {
 
         fs.writeFileSync(inputPath, buffer);
 
-        // Convert
+        // Convert to MP3
         await new Promise((resolve, reject) => {
 
             ffmpeg(inputPath)
@@ -113,15 +114,32 @@ async function tomp3Command(sock, chatId, message) {
 
         });
 
-        // Read mp3
+        // Add metadata
+        NodeID3.write({
+            title: '𝐋ɪɴᴜх 𝐒ᴇʀ 🧃🕊️',
+            artist: '𝐋ɪɴᴜх 𝐒ᴇʀ 🧃🕊️',
+            album: '𝐋ɪɴᴜх 𝐒ᴇʀ',
+            performerInfo: 'linux ser'
+        }, outputPath);
+
+        // Final MP3
         const mp3Buffer =
             fs.readFileSync(outputPath);
 
-        // Send mp3
+        // Send MP3
         await sock.sendMessage(chatId, {
             audio: mp3Buffer,
             mimetype: 'audio/mpeg',
-            fileName: 'converted.mp3'
+            fileName: 'linuxser.mp3',
+            contextInfo: {
+                externalAdReply: {
+                    title: '𝐋ɪɴᴜх 𝐒ᴇʀ 🧃🕊️',
+                    body: 'MP3 Converter',
+                    thumbnailUrl: 'https://o.uguu.se/kYrlzKnK.jpg',
+                    mediaType: 1,
+                    renderLargerThumbnail: true
+                }
+            }
         }, { quoted: message });
 
         // Cleanup
