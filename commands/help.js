@@ -135,7 +135,7 @@ async function helpCommand(sock, chatId, message) {
 ┃ ✦ .tts <text>
 ┃ ✦ .attp <text>
 ┃ ✦ .url
-┃ ✦ .tovn
+┃ ✦ .tovoice
 ┃ ✦ .tomp3
 ╰━━━━━━━━━━━━━━━━━━╯
 
