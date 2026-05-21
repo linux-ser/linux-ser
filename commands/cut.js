@@ -17,6 +17,38 @@ const cutAudio = async (
     try {
 
         // =========================
+        // GET TIMES
+        // =========================
+
+        const args =
+        userMessage
+        .trim()
+        .split(/\s+/)
+        .slice(1);
+
+        // =========================
+        // USAGE MESSAGE
+        // =========================
+
+        if (args.length < 2) {
+
+            return await sock.sendMessage(chatId, {
+
+                text:
+`╭━━━〔 ✂️ Audio Cutter 〕━━━╮
+┃ ✦ Reply to an audio
+┃ ✦ Use:
+┃ ✦ .cut 0:10 0:20
+╰━━━━━━━━━━━━━━━━━━╯`
+
+            }, { quoted: message });
+
+        }
+
+        const start = args[0];
+        const end = args[1];
+
+        // =========================
         // GET QUOTED MESSAGE
         // =========================
 
@@ -26,61 +58,20 @@ const cutAudio = async (
         ?.contextInfo
         ?.quotedMessage;
 
-        if (!quoted) {
+        // =========================
+        // CHECK AUDIO
+        // =========================
+
+        if (!quoted?.audioMessage) {
 
             return await sock.sendMessage(chatId, {
 
                 text:
-`❌ Reply to an audio message.
-
-Example:
-.cut 0:30 1:00`
+'❌ Reply to an audio message.'
 
             }, { quoted: message });
 
         }
-
-        // =========================
-        // DETECT AUDIO
-        // =========================
-
-        const mediaMessage =
-            quoted.audioMessage ||
-            quoted.documentMessage ||
-            quoted.videoMessage;
-
-        if (!mediaMessage) {
-
-            return await sock.sendMessage(chatId, {
-
-                text:
-'❌ Replied message is not audio.'
-
-            }, { quoted: message });
-
-        }
-
-        // =========================
-        // GET TIMES
-        // =========================
-
-        const args =
-        userMessage.trim().split(/\s+/).slice(1);
-
-        if (args.length < 2) {
-
-            return await sock.sendMessage(chatId, {
-
-                text:
-`❌ Example:
-.cut 0:30 1:00`
-
-            }, { quoted: message });
-
-        }
-
-        const start = args[0];
-        const end = args[1];
 
         // =========================
         // REACTION
@@ -96,7 +87,7 @@ Example:
         });
 
         // =========================
-        // DOWNLOAD MEDIA
+        // DOWNLOAD AUDIO
         // =========================
 
         const buffer =
@@ -119,7 +110,7 @@ Example:
         );
 
         // =========================
-        // TEMP
+        // TEMP FOLDER
         // =========================
 
         const tempDir =
@@ -194,7 +185,7 @@ Example:
             }
 
             // =========================
-            // METADATA
+            // ADD METADATA
             // =========================
 
             let ffmpegCmd;
@@ -230,7 +221,9 @@ Example:
 
             }
 
-            exec(ffmpegCmd,
+            exec(
+
+                ffmpegCmd,
 
             async (metaErr) => {
 
@@ -259,35 +252,12 @@ Example:
                     ptt: false,
 
                     fileName:
-                    'linuxser.mp3',
-
-                    contextInfo: {
-
-                        externalAdReply: {
-
-                            showAdAttribution: false,
-
-                            title:
-                            '𝐋ɪɴᴜх 𝐒ᴇʀ 🧃🕊️',
-
-                            body:
-`🎵 Cut Audio • ${start} → ${end}`,
-
-                            mediaType: 1,
-
-                            renderLargerThumbnail: true,
-
-                            thumbnailUrl:
-'https://o.uguu.se/kYrlzKnK.jpg'
-
-                        }
-
-                    }
+                    'linuxser.mp3'
 
                 }, { quoted: message });
 
                 // =========================
-                // SUCCESS
+                // SUCCESS REACTION
                 // =========================
 
                 await sock.sendMessage(chatId, {
@@ -300,7 +270,7 @@ Example:
                 });
 
                 // =========================
-                // DELETE TEMP
+                // DELETE TEMP FILES
                 // =========================
 
                 [
