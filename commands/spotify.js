@@ -91,19 +91,24 @@ async function spotifyCommand(
         // ======================
 
         const apiUrl =
-
-`https://api.fabdl.com/spotify/get?url=${encodeURIComponent(spotifyUrl)}`;
+`https://api.spotifydown.com/download/${encodeURIComponent(spotifyUrl)}`;
 
         const response =
-        await axios.get(apiUrl);
+        await axios.get(apiUrl, {
+
+            headers: {
+                'User-Agent':
+                'Mozilla/5.0'
+            }
+
+        });
 
         // ======================
-        // CHECK RESPONSE
+        // CHECK DATA
         // ======================
 
         if (
-            !response.data ||
-            !response.data.result
+            !response.data
         ) {
 
             throw new Error(
@@ -113,19 +118,22 @@ async function spotifyCommand(
         }
 
         const data =
-        response.data.result;
+        response.data;
 
         const title =
-        data.title || 'Unknown';
+        data.title ||
+        'Spotify Song';
 
         const artist =
-        data.artist || 'Unknown';
+        data.artists ||
+        'Unknown Artist';
 
         const thumbnail =
-        data.image;
+        data.cover ||
+        'https://i.imgur.com/8wKQZ5F.jpeg';
 
         const downloadUrl =
-        data.download_url;
+        data.link;
 
         if (!downloadUrl) {
 
