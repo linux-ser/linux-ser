@@ -413,7 +413,7 @@ async function handleMessages(sock, messageUpdate, printLog) {
                 break;
             case userMessage === '.tovn':
             case userMessage === '.vn':
-            case userMessage === '.ptt':
+            case userMessage === '.tovoice':
                 await tovnCommand(sock, chatId, message);
                 commandExecuted = true;
                 break;
