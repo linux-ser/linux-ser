@@ -307,15 +307,15 @@ async function helpCommand(sock, chatId, message) {
 
         await sock.sendMessage(chatId, {
 
-            audio:
-            fs.readFileSync(audioPath),
+    audio: {
+        url: audioPath
+    },
 
-            mimetype:
-            'audio/ogg; codecs=opus',
+    mimetype: 'audio/ogg; codecs=opus',
 
-            ptt: true
+    ptt: true
 
-        }, { quoted: message });
+}, { quoted: message });
 
     }
 
