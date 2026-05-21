@@ -1,51 +1,43 @@
-const axios = require('axios');
+const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
-const ffmpeg = require('fluent-ffmpeg');
+const { writeExifImg, writeExifVid } = require('../lib/exif');
 
-// ======================
-// ATTP COMMAND
-// ======================
+async function attpCommand(sock, chatId, message) {
 
-async function attpCommand(
-    sock,
-    chatId,
-    message,
-    text
-) {
+    const userMessage =
 
-    try {
+        message.message.conversation ||
 
-        // ======================
-        // REACTION FUNCTION
-        // ======================
+        message.message.extendedTextMessage?.text ||
 
-        const react = async (
-            emoji
-        ) => {
+        '';
 
-            await sock.sendMessage(chatId, {
+    const text =
 
-                react: {
-                    text: emoji,
-                    key: message.key
-                }
+        userMessage
+        .split(' ')
+        .slice(1)
+        .join(' ');
 
-            });
+    // ======================
+    // NO TEXT
+    // ======================
 
-        };
+    if (!text) {
 
-        // ======================
-        // CHECK TEXT
-        // ======================
+        await sock.sendMessage(chatId, {
 
-        if (!text) {
+            react: {
+                text: '🎨',
+                key: message.key
+            }
 
-            await react('🎨');
+        });
 
-            return await sock.sendMessage(chatId, {
+        return await sock.sendMessage(chatId, {
 
-                text:
+            text:
 `╭━━━〔 🎨 ATTP Sticker 〕━━━╮
 ┃ ✦ Please provide text
 ┃ ✦ to create sticker
@@ -54,156 +46,58 @@ async function attpCommand(
 ┃ ✦ .attp Hello
 ╰━━━━━━━━━━━━━━━━━━╯`
 
-            }, { quoted: message });
+        }, { quoted: message });
 
-        }
+    }
+
+    try {
 
         // ======================
         // LOADING REACTION
         // ======================
 
-        await react('🪄');
+        await sock.sendMessage(chatId, {
 
-        // ======================
-        // TMP DIRECTORY
-        // ======================
-
-        const tmpDir =
-        path.join(
-            process.cwd(),
-            'tmp'
-        );
-
-        if (
-            !fs.existsSync(tmpDir)
-        ) {
-
-            fs.mkdirSync(
-                tmpDir,
-                { recursive: true }
-            );
-
-        }
-
-        // ======================
-        // FILE PATHS
-        // ======================
-
-        const gifPath =
-        path.join(
-            tmpDir,
-            `attp_${Date.now()}.gif`
-        );
-
-        const webpPath =
-        path.join(
-            tmpDir,
-            `attp_${Date.now()}.webp`
-        );
-
-        // ======================
-        // WORKING API
-        // ======================
-
-        const apiUrl =
-
-`https://api.botcahx.eu.org/api/maker/attp?text=${encodeURIComponent(text)}&apikey=Admin`;
-
-        // ======================
-        // DOWNLOAD GIF
-        // ======================
-
-        const response =
-        await axios({
-
-            method: 'GET',
-
-            url: apiUrl,
-
-            responseType: 'arraybuffer'
+            react: {
+                text: '🪄',
+                key: message.key
+            }
 
         });
 
-        fs.writeFileSync(
-            gifPath,
-            response.data
-        );
-
         // ======================
-        // CONVERT TO WEBP
+        // GENERATE VIDEO
         // ======================
 
-        await new Promise(
+        const mp4Buffer =
+        await renderBlinkingVideoWithFfmpeg(text);
 
-            (
-                resolve,
-                reject
-            ) => {
+        // ======================
+        // CONVERT TO STICKER
+        // ======================
 
-                ffmpeg(gifPath)
+        const webpPath =
+        await writeExifVid(
 
-                .outputOptions([
+            mp4Buffer,
 
-                    '-vcodec',
-                    'libwebp',
-
-                    '-vf',
-
-'scale=512:512:force_original_aspect_ratio=decrease,fps=15,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=white@0.0',
-
-                    '-loop',
-                    '0',
-
-                    '-preset',
-                    'default',
-
-                    '-an',
-
-                    '-vsync',
-                    '0'
-
-                ])
-
-                .toFormat('webp')
-
-                .save(webpPath)
-
-                .on(
-                    'end',
-                    resolve
-                )
-
-                .on(
-                    'error',
-                    reject
-                );
-
+            {
+                packname:
+                '𝐋ɪɴᴜх 𝐒ᴇʀ 🧃🕊️'
             }
 
         );
 
-        // ======================
-        // CHECK FILE
-        // ======================
+        const webpBuffer =
+        fs.readFileSync(webpPath);
 
-        if (
-            !fs.existsSync(webpPath)
-        ) {
+        try {
 
-            throw new Error(
-                'Sticker conversion failed'
-            );
+            fs.unlinkSync(webpPath);
 
         }
 
-        // ======================
-        // READ WEBP
-        // ======================
-
-        const webpBuffer =
-        fs.readFileSync(
-            webpPath
-        );
+        catch (_) {}
 
         // ======================
         // SEND STICKER
@@ -212,13 +106,7 @@ async function attpCommand(
         await sock.sendMessage(chatId, {
 
             sticker:
-            webpBuffer,
-
-            packname:
-            '𝐋ɪɴᴜх 𝐒ᴇʀ 🧃🕊️',
-
-            author:
-            'ATTP Sticker'
+            webpBuffer
 
         }, { quoted: message });
 
@@ -226,44 +114,21 @@ async function attpCommand(
         // SUCCESS REACTION
         // ======================
 
-        await react('✅');
+        await sock.sendMessage(chatId, {
 
-        // ======================
-        // CLEANUP
-        // ======================
-
-        try {
-
-            if (
-                fs.existsSync(gifPath)
-            ) {
-
-                fs.unlinkSync(
-                    gifPath
-                );
-
+            react: {
+                text: '✅',
+                key: message.key
             }
 
-            if (
-                fs.existsSync(webpPath)
-            ) {
-
-                fs.unlinkSync(
-                    webpPath
-                );
-
-            }
-
-        }
-
-        catch (_) {}
+        });
 
     }
 
     catch (error) {
 
         console.error(
-            'ATTP ERROR:',
+            'Error generating local sticker:',
             error
         );
 
@@ -291,7 +156,7 @@ async function attpCommand(
 ┃ ✦ Failed to create
 ┃ ✦ animated sticker
 ┃
-┃ 📌 Try again later
+┃ ✦ Try again later
 ╰━━━━━━━━━━━━━━━━━━╯`
 
         }, { quoted: message });
@@ -301,3 +166,270 @@ async function attpCommand(
 }
 
 module.exports = attpCommand;
+
+function renderTextToPngWithFfmpeg(text) {
+
+    return new Promise((resolve, reject) => {
+
+        const fontPath =
+        process.platform === 'win32'
+
+            ? 'C:/Windows/Fonts/arialbd.ttf'
+
+            : '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf';
+
+        // ======================
+        // ESCAPE TEXT
+        // ======================
+
+        const escapeDrawtextText = (s) => s
+
+            .replace(/\\/g, '\\\\')
+            .replace(/:/g, '\\:')
+            .replace(/'/g, "\\'")
+            .replace(/\[/g, '\\[')
+            .replace(/\]/g, '\\]')
+            .replace(/%/g, '\\%');
+
+        const safeText =
+        escapeDrawtextText(text);
+
+        const safeFontPath =
+        process.platform === 'win32'
+
+            ? fontPath
+                .replace(/\\/g, '/')
+                .replace(':', '\\:')
+
+            : fontPath;
+
+        const args = [
+
+            '-y',
+
+            '-f', 'lavfi',
+
+            '-i',
+            'color=c=#00000000:s=512x512',
+
+            '-vf',
+
+`drawtext=fontfile='${safeFontPath}':text='${safeText}':fontcolor=white:fontsize=56:borderw=2:bordercolor=black@0.6:x=(w-text_w)/2:y=(h-text_h)/2`,
+
+            '-frames:v',
+            '1',
+
+            '-f',
+            'image2',
+
+            'pipe:1'
+
+        ];
+
+        const ff =
+        spawn('ffmpeg', args);
+
+        const chunks = [];
+        const errors = [];
+
+        ff.stdout.on(
+            'data',
+            d => chunks.push(d)
+        );
+
+        ff.stderr.on(
+            'data',
+            e => errors.push(e)
+        );
+
+        ff.on(
+            'error',
+            reject
+        );
+
+        ff.on(
+            'close',
+            code => {
+
+                if (code === 0) {
+
+                    return resolve(
+                        Buffer.concat(chunks)
+                    );
+
+                }
+
+                reject(
+
+                    new Error(
+
+                        Buffer
+                        .concat(errors)
+                        .toString()
+
+                        ||
+
+`ffmpeg exited with code ${code}`
+
+                    )
+
+                );
+
+            }
+
+        );
+
+    });
+
+}
+
+function renderBlinkingVideoWithFfmpeg(text) {
+
+    return new Promise((resolve, reject) => {
+
+        const fontPath =
+        process.platform === 'win32'
+
+            ? 'C:/Windows/Fonts/arialbd.ttf'
+
+            : '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf';
+
+        // ======================
+        // ESCAPE TEXT
+        // ======================
+
+        const escapeDrawtextText = (s) => s
+
+            .replace(/\\/g, '\\\\')
+            .replace(/:/g, '\\:')
+            .replace(/,/g, '\\,')
+            .replace(/'/g, "\\'")
+            .replace(/\[/g, '\\[')
+            .replace(/\]/g, '\\]')
+            .replace(/%/g, '\\%');
+
+        const safeText =
+        escapeDrawtextText(text);
+
+        const safeFontPath =
+        process.platform === 'win32'
+
+            ? fontPath
+                .replace(/\\/g, '/')
+                .replace(':', '\\:')
+
+            : fontPath;
+
+        // ======================
+        // BLINK SETTINGS
+        // ======================
+
+        const cycle = 0.3;
+
+        const dur = 1.8;
+
+        const drawRed =
+
+`drawtext=fontfile='${safeFontPath}':text='${safeText}':fontcolor=red:borderw=2:bordercolor=black@0.6:fontsize=56:x=(w-text_w)/2:y=(h-text_h)/2:enable='lt(mod(t\\,${cycle})\\,0.1)'`;
+
+        const drawBlue =
+
+`drawtext=fontfile='${safeFontPath}':text='${safeText}':fontcolor=blue:borderw=2:bordercolor=black@0.6:fontsize=56:x=(w-text_w)/2:y=(h-text_h)/2:enable='between(mod(t\\,${cycle})\\,0.1\\,0.2)'`;
+
+        const drawGreen =
+
+`drawtext=fontfile='${safeFontPath}':text='${safeText}':fontcolor=green:borderw=2:bordercolor=black@0.6:fontsize=56:x=(w-text_w)/2:y=(h-text_h)/2:enable='gte(mod(t\\,${cycle})\\,0.2)'`;
+
+        const filter =
+
+`${drawRed},${drawBlue},${drawGreen}`;
+
+        const args = [
+
+            '-y',
+
+            '-f',
+            'lavfi',
+
+            '-i',
+
+`color=c=black:s=512x512:d=${dur}:r=20`,
+
+            '-vf',
+            filter,
+
+            '-c:v',
+            'libx264',
+
+            '-pix_fmt',
+            'yuv420p',
+
+            '-movflags',
+            '+faststart+frag_keyframe+empty_moov',
+
+            '-t',
+            String(dur),
+
+            '-f',
+            'mp4',
+
+            'pipe:1'
+
+        ];
+
+        const ff =
+        spawn('ffmpeg', args);
+
+        const chunks = [];
+        const errors = [];
+
+        ff.stdout.on(
+            'data',
+            d => chunks.push(d)
+        );
+
+        ff.stderr.on(
+            'data',
+            e => errors.push(e)
+        );
+
+        ff.on(
+            'error',
+            reject
+        );
+
+        ff.on(
+            'close',
+            code => {
+
+                if (code === 0) {
+
+                    return resolve(
+                        Buffer.concat(chunks)
+                    );
+
+                }
+
+                reject(
+
+                    new Error(
+
+                        Buffer
+                        .concat(errors)
+                        .toString()
+
+                        ||
+
+`ffmpeg exited with code ${code}`
+
+                    )
+
+                );
+
+            }
+
+        );
+
+    });
+
+}
