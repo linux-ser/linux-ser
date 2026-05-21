@@ -254,88 +254,95 @@ async function helpCommand(sock, chatId, message) {
 
     try {
 
-    const imagePath = path.join(
-        __dirname,
-        '../assets/bot_image.jpg'
-    );
+        const imagePath = path.join(
+            __dirname,
+            '../assets/bot_image.jpg'
+        );
 
-    const audioPath = path.join(
-        __dirname,
-        '../assets/menu.ogg'
-    );
+        const audioPath = path.join(
+            __dirname,
+            '../assets/menu.ogg'
+        );
 
-    // =========================
-    // SEND MENU FIRST
-    // =========================
-    if (fs.existsSync(imagePath)) {
+        // =========================
+        // SEND MENU FIRST
+        // =========================
 
-        const imageBuffer =
-        fs.readFileSync(imagePath);
+        if (fs.existsSync(imagePath)) {
+
+            await sock.sendMessage(chatId, {
+
+                image:
+                fs.readFileSync(imagePath),
+
+                caption: helpMessage,
+
+                mentions: [
+                    message.key.participant ||
+                    message.key.remoteJid
+                ]
+
+            }, { quoted: message });
+
+        } else {
+
+            await sock.sendMessage(chatId, {
+
+                text: helpMessage
+
+            }, { quoted: message });
+
+        }
+
+        // =========================
+        // SEND VOICE NOTE
+        // =========================
+
+        if (fs.existsSync(audioPath)) {
+
+            await new Promise(resolve =>
+                setTimeout(resolve, 1000)
+            );
+
+            await sock.sendMessage(chatId, {
+
+                audio: {
+                    url: audioPath
+                },
+
+                mimetype:
+                'audio/ogg; codecs=opus',
+
+                ptt: true
+
+            }, { quoted: message });
+
+        }
+
+        // Success reaction
+        await sock.sendMessage(chatId, {
+            react: {
+                text: '✅',
+                key: message.key
+            }
+        });
+
+    } catch (error) {
+
+        console.log(
+            'Help Command Error:',
+            error
+        );
 
         await sock.sendMessage(chatId, {
 
-            image: imageBuffer,
-
-            caption: helpMessage,
-
-            mentions: [
-                message.key.participant ||
-                message.key.remoteJid
-            ]
+            text:
+            '❌ Error sending help menu.'
 
         }, { quoted: message });
-
-    } else {
-
-        await sock.sendMessage(chatId, {
-
-            text: helpMessage,
-
-            mentions: [
-                message.key.participant ||
-                message.key.remoteJid
-            ]
-
-        }, { quoted: message });
-
-    }
-
-    // =========================
-    // SEND VOICE AFTER MENU
-    // =========================
-    if (fs.existsSync(audioPath)) {
-
-        await sock.sendMessage(chatId, {
-
-    audio: {
-        url: audioPath
-    },
-
-    mimetype: 'audio/ogg; codecs=opus',
-
-    ptt: true
-
-}, { quoted: message });
-
-    }
-
-} catch (error) {
-
-    console.log(
-        'Help Error:',
-        error
-    );
-
-    await sock.sendMessage(chatId, {
-
-        text:
-        '❌ Error sending menu.'
-
-    }, { quoted: message });
 
     }
 
 }
 
-// IMPORTANT EXPORT
 module.exports = helpCommand;
