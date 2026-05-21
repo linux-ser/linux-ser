@@ -1,155 +1,371 @@
 const isAdmin = require('../lib/isAdmin');
 
-/**
- * കമാൻഡ് വഴി മാനുവൽ ആയി ഡിമോട്ട് ചെയ്യുമ്പോൾ (.demote / .dm)
- */
-async function demoteCommand(sock, chatId, mentionedJids, message) {
+// ======================
+// MEMORY
+// ======================
+
+const recentDemotions =
+new Set();
+
+// ======================
+// DEMOTE COMMAND
+// ======================
+
+async function demoteCommand(
+    sock,
+    chatId,
+    mentionedJids,
+    message
+) {
+
     try {
+
         if (!chatId.endsWith('@g.us')) {
-            await sock.sendMessage(chatId, { 
-                text: 'This command can only be used in groups!'
+
+            return await sock.sendMessage(chatId, {
+
+                text:
+`╭━━━〔 ❌ Group Only 〕━━━╮
+┃ ✦ This command only works
+┃ ✦ inside WhatsApp groups
+╰━━━━━━━━━━━━━━━━━━╯`
+
             });
-            return;
+
         }
 
-        try {
-            const adminStatus = await isAdmin(sock, chatId, message.key.participant || message.key.remoteJid);
-            
-            if (!adminStatus.isBotAdmin) {
-                await sock.sendMessage(chatId, { 
-                    text: '❌ Error: Please make the bot an admin first to use this command.'
-                });
-                return;
-            }
+        // ======================
+        // ADMIN CHECK
+        // ======================
 
-            if (!adminStatus.isSenderAdmin) {
-                await sock.sendMessage(chatId, { 
-                    text: '❌ Error: Only group admins can use the demote command.'
-                });
-                return;
-            }
-        } catch (adminError) {
-            console.error('Error checking admin status:', adminError);
-            await sock.sendMessage(chatId, { 
-                text: '❌ Error: Please make sure the bot is an admin of this group.'
+        const adminStatus =
+        await isAdmin(
+
+            sock,
+            chatId,
+            message.key.participant
+            || message.key.remoteJid
+
+        );
+
+        if (!adminStatus.isBotAdmin) {
+
+            return await sock.sendMessage(chatId, {
+
+                text:
+`╭━━━〔 🤖 Bot Admin 〕━━━╮
+┃ ✦ Please make bot admin
+┃ ✦ to use this command
+╰━━━━━━━━━━━━━━━━━━╯`
+
             });
-            return;
+
         }
+
+        if (!adminStatus.isSenderAdmin) {
+
+            return await sock.sendMessage(chatId, {
+
+                text:
+`╭━━━〔 🚫 Access Denied 〕━━━╮
+┃ ✦ Only group admins
+┃ ✦ can use .demote
+╰━━━━━━━━━━━━━━━━━━╯`
+
+            });
+
+        }
+
+        // ======================
+        // GET USER
+        // ======================
 
         let userToDemote = [];
-        
-        if (mentionedJids && mentionedJids.length > 0) {
-            userToDemote = mentionedJids;
-        } else if (message.message?.extendedTextMessage?.contextInfo?.participant) {
-            userToDemote = [message.message.extendedTextMessage.contextInfo.participant];
+
+        if (
+            mentionedJids &&
+            mentionedJids.length > 0
+        ) {
+
+            userToDemote =
+            mentionedJids;
+
         }
-        
+
+        else if (
+
+            message.message
+            ?.extendedTextMessage
+            ?.contextInfo
+            ?.participant
+
+        ) {
+
+            userToDemote = [
+
+                message.message
+                .extendedTextMessage
+                .contextInfo
+                .participant
+
+            ];
+
+        }
+
+        // ======================
+        // NO USER
+        // ======================
+
         if (userToDemote.length === 0) {
-            await sock.sendMessage(chatId, { 
-                text: '❌ Error: Please mention the user or reply to their message to demote!'
-            });
-            return;
+
+            return await sock.sendMessage(chatId, {
+
+                text:
+`╭━━━〔 ⬇️ Demote User 〕━━━╮
+┃ ✦ Mention or reply
+┃ ✦ to a user
+┃ ✦ Example:
+┃ ✦ .demote @user
+╰━━━━━━━━━━━━━━━━━━╯`
+
+            }, { quoted: message });
+
         }
 
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        await sock.groupParticipantsUpdate(chatId, userToDemote, "demote");
-        
-        const usernames = await Promise.all(userToDemote.map(async jid => {
-            return `@${jid.split('@')[0]}`;
-        }));
+        // ======================
+        // REACTION
+        // ======================
 
-        const demoterJid = message.key.participant || message.key.remoteJid;
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await sock.sendMessage(chatId, {
 
-        // 🇮🇳 Indian Time Zone Settings (IST)
-        const options = { timeZone: 'Asia/Kolkata', hour12: true, hour: '2-digit', minute: '2-digit' };
-        const dateOptions = { timeZone: 'Asia/Kolkata', day: '2-digit', month: '2-digit', year: 'numeric' };
-        
-        const indianDate = new Date().toLocaleDateString('en-GB', dateOptions);
-        const indianTime = new Date().toLocaleTimeString('en-US', options);
+            react: {
+                text: '⬇️',
+                key: message.key
+            }
 
-        const demotionMessage = 
-            `╭──〔 ⬇️ 𝗗𝗘𝗠𝗢𝗧𝗜𝗢𝗡 〕──╮\n` +
-            `│\n` +
-            `│ 📝 𝙎𝙩𝙖𝙩𝙪𝙨         :  ✅ Success\n` +
-            `│ 👤 𝘿𝙚𝙢𝙤𝙩𝙚𝙙 𝙐𝙨𝙚𝙧  :  ${usernames.join(', ')}\n` +
-            `│ 👑 𝘼𝙪𝙩𝙝𝙤𝙧𝙞𝙯𝙚𝙙  :  @${demoterJid.split('@')[0]}\n` +
-            `│ 📅 𝘿𝙖𝙩𝙚           :  ${indianDate}\n` +
-            `│ ⏰ 𝙏𝙞𝙢𝙚           :  ${indianTime}\n` +
-            `│\n` +
-            `╰───────────────⌁\n\n` +
-            `> ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ ⚡`;
-        
-        await sock.sendMessage(chatId, { 
-            text: demotionMessage,
-            mentions: [...userToDemote, demoterJid]
         });
+
+        // ======================
+        // SAVE TEMP
+        // ======================
+
+        userToDemote.forEach(jid => {
+
+            recentDemotions.add(jid);
+
+            setTimeout(() => {
+
+                recentDemotions.delete(jid);
+
+            }, 5000);
+
+        });
+
+        // ======================
+        // DEMOTE
+        // ======================
+
+        await sock.groupParticipantsUpdate(
+
+            chatId,
+            userToDemote,
+            "demote"
+
+        );
+
+        // ======================
+        // FORMAT
+        // ======================
+
+        const usernames =
+        userToDemote.map(
+
+            jid =>
+            `@${jid.split('@')[0]}`
+
+        );
+
+        const demoterJid =
+        message.key.participant
+        || message.key.remoteJid;
+
+        const indianDate =
+        new Date().toLocaleDateString(
+            'en-GB',
+            {
+                timeZone:
+                'Asia/Kolkata'
+            }
+        );
+
+        const indianTime =
+        new Date().toLocaleTimeString(
+            'en-US',
+            {
+                timeZone:
+                'Asia/Kolkata',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            }
+        );
+
+        // ======================
+        // MESSAGE
+        // ======================
+
+        const demotionMessage =
+
+`╭──〔 ⬇️ 𝗗𝗘𝗠𝗢𝗧𝗜𝗢𝗡 〕──╮
+│
+│ 📝 𝙎𝙩𝙖𝙩𝙪𝙨         :  ✅ Success
+│ 👤 𝘿𝙚𝙢𝙤𝙩𝙚𝙙 𝙐𝙨𝙚𝙧  :  ${usernames.join(', ')}
+│ 👑 𝘼𝙪𝙩𝙝𝙤𝙧𝙞𝙯𝙚𝙙  :  @${demoterJid.split('@')[0]}
+│ 📅 𝘿𝙖𝙩𝙚           :  ${indianDate}
+│ ⏰ 𝙏𝙞𝙢𝙚           :  ${indianTime}
+│
+╰───────────────⌁
+
+> ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ ⚡`;
+
+        await sock.sendMessage(chatId, {
+
+            text:
+            demotionMessage,
+
+            mentions: [
+                ...userToDemote,
+                demoterJid
+            ]
+
+        });
+
     } catch (error) {
-        console.error('Error in demote command:', error);
-        if (error.data === 429) {
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            try {
-                await sock.sendMessage(chatId, { text: '❌ Rate limit reached. Please try again.' });
-            } catch {}
-        } else {
-            try {
-                await sock.sendMessage(chatId, { text: '❌ Failed to demote user(s).' });
-            } catch {}
-        }
+
+        console.log(error);
+
+        await sock.sendMessage(chatId, {
+
+            text:
+'❌ Failed to demote user.'
+
+        });
+
     }
+
 }
 
-/**
- * ഗ്രൂപ്പിൽ ആരെങ്കിലും മാനുവൽ അല്ലാതെ ഡിമോട്ട് ചെയ്യുമ്പോൾ ബോട്ട് തനിയെ ഡിറ്റക്ട് ചെയ്യുന്നത്
- */
-async function handleDemotionEvent(sock, groupId, participants, author) {
+// ======================
+// EVENT DETECTION
+// ======================
+
+async function handleDemotionEvent(
+    sock,
+    groupId,
+    participants,
+    author
+) {
+
     try {
-        if (!Array.isArray(participants) || participants.length === 0) return;
 
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        if (
+            !Array.isArray(participants)
+        ) return;
 
-        const demotedUsernames = await Promise.all(participants.map(async jid => {
-            const jidString = typeof jid === 'string' ? jid : (jid.id || jid.toString());
-            return `@${jidString.split('@')[0]}`;
-        }));
+        // ======================
+        // SKIP COMMAND DEMOTE
+        // ======================
 
-        let demotedBy = 'System';
-        let mentionList = participants.map(jid => typeof jid === 'string' ? jid : (jid.id || jid.toString()));
+        const filtered =
+        participants.filter(
 
-        if (author && author.length > 0) {
-            const authorJid = typeof author === 'string' ? author : (author.id || author.toString());
-            demotedBy = `@${authorJid.split('@')[0]}`;
-            mentionList.push(authorJid);
+            jid =>
+            !recentDemotions.has(jid)
+
+        );
+
+        if (filtered.length === 0)
+        return;
+
+        const users =
+        filtered.map(
+
+            jid =>
+            `@${jid.split('@')[0]}`
+
+        );
+
+        let mentionList =
+        [...filtered];
+
+        let demotedBy =
+        'System';
+
+        if (author) {
+
+            demotedBy =
+            `@${author.split('@')[0]}`;
+
+            mentionList.push(author);
+
         }
 
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        const indianDate =
+        new Date().toLocaleDateString(
+            'en-GB',
+            {
+                timeZone:
+                'Asia/Kolkata'
+            }
+        );
 
-        // 🇮🇳 Indian Time Zone Settings (IST)
-        const options = { timeZone: 'Asia/Kolkata', hour12: true, hour: '2-digit', minute: '2-digit' };
-        const dateOptions = { timeZone: 'Asia/Kolkata', day: '2-digit', month: '2-digit', year: 'numeric' };
-        
-        const indianDate = new Date().toLocaleDateString('en-GB', dateOptions);
-        const indianTime = new Date().toLocaleTimeString('en-US', options);
+        const indianTime =
+        new Date().toLocaleTimeString(
+            'en-US',
+            {
+                timeZone:
+                'Asia/Kolkata',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            }
+        );
 
-        const demotionMessage = 
-            `╭──〔 ⬇️ 𝗗𝗘𝗠𝗢𝗧𝗜𝗢𝗡 〕──╮\n` +
-            `│\n` +
-            `│ 📝 𝙎𝙩𝙖𝙩𝙪𝙨         :  ✅ Detected\n` +
-            `│ 👤 𝘿𝙚𝙢𝙤𝙩𝙚𝙙 𝙐𝙨𝙚𝙧  :  ${demotedUsernames.join(', ')}\n` +
-            `│ 👑 𝘼𝙪𝙩𝙝𝙤𝙧𝙞𝙯𝙚𝙙  :  ${demotedBy}\n` +
-            `│ 📅 𝘿𝙖𝙩𝖊           :  ${indianDate}\n` +
-            `│ ⏰ 𝙏𝙞𝙢𝙚           :  ${indianTime}\n` +
-            `│\n` +
-            `╰───────────────⌁\n\n` +
-            `> ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ ⚡`;
-        
+        const detectMessage =
+
+`╭──〔 ⬇️ 𝗗𝗘𝗠𝗢𝗧𝗜𝗢𝗡 〕──╮
+│
+│ 📝 𝙎𝙩𝙖𝙩𝙪𝙨         :  ✅ Detected
+│ 👤 𝘿𝙚𝙢𝙤𝙩𝙚𝙙 𝙐𝙨𝙚𝙧  :  ${users.join(', ')}
+│ 👑 𝘼𝙪𝙩𝙝𝙤𝙧𝙞𝙯𝙚𝙙  :  ${demotedBy}
+│ 📅 𝘿𝙖𝙩𝖊           :  ${indianDate}
+│ ⏰ 𝙏𝙞𝙢𝙚           :  ${indianTime}
+│
+╰───────────────⌁
+
+> ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ ⚡`;
+
         await sock.sendMessage(groupId, {
-            text: demotionMessage,
-            mentions: mentionList
+
+            text:
+            detectMessage,
+
+            mentions:
+            mentionList
+
         });
-    } catch (error) {
-        console.error('Error handling demotion event:', error);
+
+    } catch (err) {
+
+        console.log(err);
+
     }
+
 }
 
-module.exports = { demoteCommand, handleDemotionEvent };
+module.exports = {
+
+    demoteCommand,
+    handleDemotionEvent
+
+};
