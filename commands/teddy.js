@@ -3,47 +3,47 @@ async function teddyCommand(sock, chatId, message) {
     const frames = [
 String.raw`(\_/)
 (•.•)
-( >❤️`,
+/ >❤️`,
 
 String.raw`(\_/)
 (•.•)
-( >🤍`,
+/ >🤍`,
 
 String.raw`(\_/)
 (•.•)
-( >🤎`,
+/ >🤎`,
 
 String.raw`(\_/)
 (•.•)
-( >🩷`,
+/ >🩷`,
 
 String.raw`(\_/)
 (•.•)
-( >💜`,
+/ >💜`,
 
 String.raw`(\_/)
 (•.•)
-( >🧡`,
+/ >🧡`,
 
 String.raw`(\_/)
 (•.•)
-( >💛`,
+/ >💛`,
 
 String.raw`(\_/)
 (•.•)
-( >💚`,
+/ >💚`,
 
 String.raw`(\_/)
 (•.•)
-( >🩵`,
+/ >🩵`,
 
 String.raw`(\_/)
 (•.•)
-( >🖤`,
+/ >🖤`,
 
 String.raw`(\_/)
 (•.•)
-( >🧸`
+/ >🧸`
 ];
 
     // First message
