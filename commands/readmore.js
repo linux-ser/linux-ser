@@ -10,16 +10,21 @@ async function readmoreCommand(sock, chatId, message, text) {
 
         }
 
-        // Split texts
-        const [firstText, secondText] = text
-            .split(',');
+        // Split text
+        const parts = text.split(',');
+
+        const firstText = parts[0].trim();
+        const secondText = parts.slice(1).join(',').trim();
 
         // Invisible readmore trigger
         const more = String.fromCharCode(8206).repeat(4000);
 
-        // Final message
+        // 70 lines after click
+        const lines = '\n'.repeat(70);
+
+        // Final output
         const finalText =
-`${firstText}${more}${secondText}`;
+`${firstText}${more}${lines}${secondText}`;
 
         await sock.sendMessage(chatId, {
             text: finalText
