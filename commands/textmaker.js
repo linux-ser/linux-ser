@@ -23,7 +23,7 @@ async function textmakerCommand(sock, chatId, message, q, type) {
 
         if (!q) {
             return await sock.sendMessage(chatId,
-                messageTemplates.error("Please provide text to generate\nExample: .metallic Nick")
+                messageTemplates.error("Please provide text to generate\nExample: .metallic Linux")
             );
         }
 
@@ -31,7 +31,7 @@ async function textmakerCommand(sock, chatId, message, q, type) {
 
         if (!text) {
             return await sock.sendMessage(chatId,
-                messageTemplates.error("Please provide text to generate\nExample: .metallic Nick")
+                messageTemplates.error("Please provide text to generate\nExample: .metallic Linux")
             );
         }
 
