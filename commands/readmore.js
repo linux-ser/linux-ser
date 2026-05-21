@@ -19,8 +19,8 @@ async function readmoreCommand(sock, chatId, message, text) {
         // Invisible readmore trigger
         const more = String.fromCharCode(8206).repeat(4000);
 
-        // 70 lines after click
-        const lines = '\n'.repeat(70);
+        // 100 lines after click
+        const lines = '\n'.repeat(100);
 
         // Final output
         const finalText =
