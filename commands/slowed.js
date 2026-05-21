@@ -116,10 +116,12 @@ async function slowedCommand(sock, chatId, message) {
             ffmpeg(inputPath)
 
                 .audioFilters([
-                    'atempo=0.85',
-                    'asetrate=44100*0.92',
+                    'atempo=0.82',
+                    'asetrate=44100*0.88',
                     'aresample=44100',
-                    'aecho=0.8:0.9:1000:0.3'
+                    'aecho=0.8:0.88:60:0.4',
+                    'bass=g=6:f=110:w=0.6',
+                    'volume=1.15'
                 ])
 
                 .audioCodec('libmp3lame')
