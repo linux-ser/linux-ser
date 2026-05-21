@@ -11,7 +11,7 @@ const {
     '@whiskeysockets/baileys'
 );
 
-module.exports = async (
+const cutAudio = async (
     sock,
     chatId,
     message,
@@ -74,6 +74,7 @@ Example:
         }
 
         const start = args[0];
+
         const end = args[1];
 
         // =====================
@@ -158,7 +159,7 @@ Example:
         const coverPath =
         path.join(
             __dirname,
-            '../assets/audio_cover.jpg'
+            '../assets/bot_image.jpg'
         );
 
         fs.writeFileSync(
@@ -192,7 +193,7 @@ Example:
             }
 
             // =====================
-            // ADD METADATA + COVER
+            // ADD METADATA
             // =====================
 
             let ffmpegCmd;
@@ -340,3 +341,5 @@ Example:
     }
 
 };
+
+module.exports = cutAudio;
