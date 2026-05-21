@@ -98,6 +98,7 @@ const characterCommand = require('./commands/character');
 const wastedCommand = require('./commands/wasted');
 const shipCommand = require('./commands/ship');
 const loveCommand = require('./commands/love'); 
+const teddyCommand = require('./commands/teddy');
 const { groupInfoCommand } = require('./commands/groupinfo');
 const resetlinkCommand = require('./commands/resetlink');
 const staffCommand = require('./commands/staff');
@@ -749,6 +750,10 @@ async function handleMessages(sock, messageUpdate, printLog) {
                 await loveCommand(sock, chatId, message);
                 commandExecuted = true;
                 break;
+             case userMessage === '.teddy':
+                 await teddyCommand(sock, chatId, message);
+                 commandExecuted = true;
+                 break;
             case userMessage === '.groupinfo':
                 {
                     // ഗ്രൂപ്പിൽ ആണെങ്കിൽ മാത്രം കമാൻഡ് വർക്ക് ചെയ്യിക്കുന്നു
