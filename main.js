@@ -428,7 +428,7 @@ async function handleMessages(sock, messageUpdate, printLog) {
               );
                 commandExecuted = true;
                 break;
-            case userMessage.startsWith('.cut '):
+            case userMessage.startsWith('.cut'):
                 await cutAudio(
                 sock,
                 chatId,
