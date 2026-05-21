@@ -37,8 +37,7 @@ const cutAudio = async (
                 text:
 `╭━━━〔 ✂️ Audio Cutter 〕━━━╮
 ┃ ✦ Reply to an audio
-┃ ✦ Use:
-┃ ✦ .cut 0:10 0:20
+┃ ✦ Use: .cut 0:10 0:20
 ╰━━━━━━━━━━━━━━━━━━╯`
 
             }, { quoted: message });
