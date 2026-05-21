@@ -9,10 +9,8 @@ async function aiCommand(sock, chatId, message) {
             message.message?.extendedTextMessage?.text ||
             '';
 
-        const args = text.trim().split(' ');
-
-        const command =
-            args[0]?.toLowerCase();
+        const args =
+            text.trim().split(' ');
 
         const query =
             args.slice(1).join(' ').trim();
@@ -45,18 +43,14 @@ Example:
 
         });
 
-        // API LIST
+        // AI APIs
         const apis = [
 
             `https://api.siputzx.my.id/api/ai/gemini-pro?content=${encodeURIComponent(query)}`,
 
-            `https://api.ryzendesu.vip/api/ai/gemini?text=${encodeURIComponent(query)}`,
+            `https://api.gurusensei.workers.dev/llm?prompt=${encodeURIComponent(query)}`,
 
-            `https://vapis.my.id/api/gemini?q=${encodeURIComponent(query)}`,
-
-            `https://api.giftedtech.my.id/api/ai/geminiai?apikey=gifted&q=${encodeURIComponent(query)}`,
-
-            `https://api.giftedtech.my.id/api/ai/geminiaipro?apikey=gifted&q=${encodeURIComponent(query)}`
+            `https://luminai.my.id/`
 
         ];
 
@@ -67,60 +61,126 @@ Example:
 
             try {
 
-                const response = await axios.get(api, {
+                let data;
 
-                    timeout: 20000,
+                // Luminai POST API
+                if (api.includes('luminai')) {
 
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0'
-                    }
+                    const response =
+                    await axios.post(api, {
 
-                });
+                        content: query,
+                        user: 'LinuxSer'
 
-                const data = response.data;
+                    }, {
 
-                // Find valid string
-                answer = [
+                        timeout: 30000,
+
+                        headers: {
+                            'Content-Type':
+                            'application/json'
+                        }
+
+                    });
+
+                    data = response.data;
+
+                }
+
+                // Normal GET APIs
+                else {
+
+                    const response =
+                    await axios.get(api, {
+
+                        timeout: 30000,
+
+                        headers: {
+                            'User-Agent':
+                            'Mozilla/5.0',
+
+                            'Accept':
+                            'application/json'
+                        }
+
+                    });
+
+                    data = response.data;
+
+                }
+
+                // Skip HTML response
+                if (
+
+                    typeof data === 'string' &&
+
+                    (
+                        data.includes('<!DOCTYPE html>') ||
+                        data.includes('<html')
+                    )
+
+                ) {
+
+                    console.log(
+                        'HTML response skipped'
+                    );
+
+                    continue;
+
+                }
+
+                // Extract possible text
+                const possible = [
 
                     data.result,
                     data.answer,
                     data.message,
-                    data.data,
                     data.response,
-                    data.text
+                    data.text,
+                    data.content,
+                    data.data
 
-                ].find(v =>
+                ];
+
+                answer = possible.find(v =>
 
                     typeof v === 'string' &&
+
                     v.trim() !== '' &&
-                    v.trim().toLowerCase() !== 'null' &&
-                    v.trim().toLowerCase() !== 'undefined'
+
+                    v.trim().toLowerCase()
+                    !== 'null' &&
+
+                    v.trim().toLowerCase()
+                    !== 'undefined'
 
                 );
 
-                // Object response support
+                // Deep object scan
                 if (
                     !answer &&
                     typeof data === 'object'
                 ) {
 
                     const values =
-                    Object.values(data);
+                    JSON.stringify(data);
 
-                    answer = values.find(v =>
+                    if (
+                        values &&
+                        values.length > 5
+                    ) {
 
-                        typeof v === 'string' &&
-                        v.trim() !== '' &&
-                        v.trim().toLowerCase() !== 'null'
+                        answer = values
+                        .replace(/[{}[\]"]/g, '');
 
-                    );
+                    }
 
                 }
 
                 // Success
                 if (
-                    typeof answer === 'string' &&
-                    answer.trim().length > 2
+                    answer &&
+                    answer.length > 2
                 ) {
 
                     break;
@@ -130,8 +190,8 @@ Example:
             } catch (e) {
 
                 console.log(
-                    'API Failed:',
-                    api
+                    'API ERROR:',
+                    e.message
                 );
 
                 continue;
@@ -148,7 +208,15 @@ Example:
 
         }
 
-        // Send answer
+        // Limit very long messages
+        if (answer.length > 4000) {
+
+            answer =
+            answer.slice(0, 4000);
+
+        }
+
+        // Send response
         await sock.sendMessage(chatId, {
 
             text: answer
