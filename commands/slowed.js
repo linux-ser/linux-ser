@@ -116,15 +116,23 @@ async function slowedCommand(sock, chatId, message) {
             ffmpeg(inputPath)
 
                 .audioFilters([
+
                     'atempo=0.90',
+
                     'asetrate=44100*0.88',
+
                     'aresample=44100',
+
                     'aecho=0.8:0.88:60:0.4',
+
                     'bass=g=6:f=110:w=0.6',
+
                     'volume=1.15'
+
                 ])
 
                 .audioCodec('libmp3lame')
+                .audioBitrate(128)
                 .format('mp3')
                 .save(outputPath)
 
@@ -133,40 +141,59 @@ async function slowedCommand(sock, chatId, message) {
 
         });
 
-        // Metadata + image
+        // Check output
+        if (!fs.existsSync(outputPath)) {
+
+            throw new Error(
+                'Audio conversion failed'
+            );
+
+        }
+
+        // Add metadata + cover
         NodeID3.write({
 
-            title: '♫ 𝐒ʟᴏᴡᴇᴅ + 𝐑ᴇᴠᴇʀʙ',
-            artist: '𝐋ɪɴᴜх 𝐒ᴇʀ',
-            album: '🎶 𝐕ɪʙᴇꜱ',
-            performerInfo: '𝐋ɪɴᴜх 𝐒ᴇʀ',
+            title:
+            '♫ 𝐒ʟᴏᴡᴇᴅ + 𝐑ᴇᴠᴇʀʙ',
+
+            artist:
+            '𝐋ɪɴᴜх 𝐒ᴇʀ',
+
+            album:
+            '🎶 𝐕ɪʙᴇꜱ',
+
+            performerInfo:
+            '𝐋ɪɴᴜх 𝐒ᴇʀ',
 
             image: {
                 mime: 'image/jpeg',
+
                 type: {
                     id: 3,
                     name: 'front cover'
                 },
+
                 description: 'Cover',
+
                 imageBuffer: fs.readFileSync(
                     path.join(
                         __dirname,
-                        '../assets/bot_image.jpg'
+                        '../assets/bot.image.jpg'
                     )
                 )
             }
 
         }, outputPath);
 
-        // Read output
-        const audioBuffer =
-            fs.readFileSync(outputPath);
-
         // Send audio
         await sock.sendMessage(chatId, {
 
-            audio: audioBuffer,
+            audio: {
+                url: outputPath
+            },
+
             mimetype: 'audio/mpeg',
+
             ptt: false,
 
             fileName:
@@ -174,11 +201,18 @@ async function slowedCommand(sock, chatId, message) {
 
             contextInfo: {
                 externalAdReply: {
-                    title: '♫ 𝐒ʟᴏᴡᴇᴅ + 𝐑ᴇᴠᴇʀʙ',
-                    body: '🎶 Smooth Music Effect',
+
+                    title:
+                    '♫ 𝐒ʟᴏᴡᴇᴅ + 𝐑ᴇᴠᴇʀʙ',
+
+                    body:
+                    '🎶 Smooth Music Effect',
+
                     thumbnailUrl:
                     'https://o.uguu.se/kYrlzKnK.jpg',
+
                     mediaType: 1,
+
                     renderLargerThumbnail: true
                 }
             }
@@ -202,7 +236,8 @@ async function slowedCommand(sock, chatId, message) {
         console.log('SLOWED ERROR:', e);
 
         await sock.sendMessage(chatId, {
-            text: `❌ Error:\n${e.message}`
+            text:
+            `❌ Error:\n${e.message}`
         }, { quoted: message });
 
     }
