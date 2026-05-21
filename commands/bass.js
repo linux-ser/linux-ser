@@ -92,23 +92,25 @@ async function bassCommand(sock, chatId, message) {
 
         }
 
-        // Paths
+        // Unique names
+        const timestamp = Date.now();
+
         const inputPath =
             path.join(
                 tempDir,
-                `${Date.now()}.${type}`
+                `input_${timestamp}.${type}`
             );
 
         const outputPath =
             path.join(
                 tempDir,
-                `${Date.now()}.mp3`
+                `output_${timestamp}.mp3`
             );
 
         // Save input
         fs.writeFileSync(inputPath, buffer);
 
-        // Bass boost
+        // Bass boost convert
         await new Promise((resolve, reject) => {
 
             ffmpeg(inputPath)
@@ -177,7 +179,7 @@ async function bassCommand(sock, chatId, message) {
         fs.unlinkSync(inputPath);
         fs.unlinkSync(outputPath);
 
-        // Done react
+        // Success react
         await sock.sendMessage(chatId, {
             react: {
                 text: '✅',
