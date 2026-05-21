@@ -428,14 +428,15 @@ async function handleMessages(sock, messageUpdate, printLog) {
               );
                 commandExecuted = true;
                 break;
-            case userMessage === '.cut':
+            case userMessage.startsWith('.cut'):
                 await cutAudio(
                 sock,
                 chatId,
                 message,
                 body,
                 logger
-              );
+             );
+                commandExecuted = true;
                 break;
             case userMessage === '.bass':
                 await bassCommand(
