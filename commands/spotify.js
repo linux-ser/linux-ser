@@ -1,168 +1,233 @@
 const axios = require('axios');
 
-async function spotifyCommand(sock, chatId, message) {
+async function spotifyCommand(
+    sock,
+    chatId,
+    message
+) {
+
     try {
-        const rawText =
-            message.message?.conversation?.trim() ||
-            message.message?.extendedTextMessage?.text?.trim() ||
-            message.message?.imageMessage?.caption?.trim() ||
-            message.message?.videoMessage?.caption?.trim() ||
-            '';
 
-        const args = rawText.split(/\s+/);
-        args.shift();
+        // ======================
+        // GET MESSAGE
+        // ======================
 
-        const spotifyUrl = args.join(' ').trim();
+        const text =
+        message.message?.conversation ||
 
-        // No URL
+        message.message?.extendedTextMessage?.text ||
+
+        '';
+
+        // ======================
+        // GET URL
+        // ======================
+
+        const args =
+        text.trim().split(/\s+/);
+
+        const spotifyUrl =
+        args[1];
+
+        // ======================
+        // USAGE MESSAGE
+        // ======================
+
         if (!spotifyUrl) {
-            return await sock.sendMessage(chatId, {
-                text:
-`⚠️ Please provide a Spotify track link.
 
-📌 Example:
-.spotify https://open.spotify.com/track/xxxx`
-            }, { quoted: message });
-        }
-
-        // Validate Spotify link
-        if (!spotifyUrl.includes('open.spotify.com/track/')) {
-            return await sock.sendMessage(chatId, {
-                text: '❌ Invalid Spotify track link.'
-            }, { quoted: message });
-        }
-
-        // React loading
-        await sock.sendMessage(chatId, {
-            react: {
-                text: '⏳',
-                key: message.key
-            }
-        });
-
-        // WORKING API
-        const apiUrl =
-            `https://api.siputzx.my.id/api/d/spotify?url=${encodeURIComponent(spotifyUrl)}`;
-
-        const response = await axios.get(apiUrl, {
-            timeout: 60000,
-            headers: {
-                'User-Agent': 'Mozilla/5.0'
-            }
-        });
-
-        const data = response.data;
-
-        // Debug log
-        console.log(data);
-
-        // Result
-        const result =
-            data.data ||
-            data.result ||
-            data;
-
-        if (!result) {
-            throw new Error('No result');
-        }
-
-        const title =
-            result.title ||
-            result.name ||
-            'Unknown';
-
-        const artist =
-            result.artist ||
-            result.artists ||
-            'Unknown';
-
-        const thumbnail =
-            result.thumbnail ||
-            result.cover ||
-            result.image;
-
-        const audioUrl =
-            result.download ||
-            result.url ||
-            result.audio ||
-            result.downloadUrl;
-
-        if (!audioUrl) {
-            throw new Error('No audio URL found');
-        }
-
-        // React music
-        await sock.sendMessage(chatId, {
-            react: {
-                text: '🎵',
-                key: message.key
-            }
-        });
-
-        // Send thumbnail
-        if (thumbnail) {
             await sock.sendMessage(chatId, {
-                image: { url: thumbnail },
-                caption:
-`🎧 *SPOTIFY DOWNLOADER*
 
-🎵 Title: ${title}
-👤 Artist: ${artist}
+                react: {
+                    text: '🎵',
+                    key: message.key
+                }
 
-⬇️ Downloading audio...`
+            });
+
+            return await sock.sendMessage(chatId, {
+
+                text:
+`╭━━━〔 🎧 Spotify Downloader 〕━━━╮
+┃ ✦ Please provide
+┃ ✦ a Spotify track link
+┃
+┃ ✦ Example:
+┃ ✦ .spotify https://open.spotify.com/track/xxxx
+╰━━━━━━━━━━━━━━━━━━━━╯`
+
             }, { quoted: message });
+
         }
 
-        // Download audio buffer
-        const audioResponse = await axios.get(audioUrl, {
-            responseType: 'arraybuffer',
-            timeout: 120000,
-            headers: {
-                'User-Agent': 'Mozilla/5.0',
-                'Accept': '*/*'
+        // ======================
+        // LOADING REACTION
+        // ======================
+
+        await sock.sendMessage(chatId, {
+
+            react: {
+                text: '🎶',
+                key: message.key
             }
+
         });
 
-        const audioBuffer = Buffer.from(audioResponse.data);
+        // ======================
+        // LOADING MESSAGE
+        // ======================
 
-        if (!audioBuffer || audioBuffer.length < 1000) {
-            throw new Error('Invalid audio buffer');
-        }
-
-        // Send audio
         await sock.sendMessage(chatId, {
-            audio: audioBuffer,
-            mimetype: 'audio/mpeg',
-            fileName: `${title.replace(/[\\/:*?"<>|]/g, '')}.mp3`,
-            ptt: false
+
+            text:
+`╭━━━〔 🎵 Downloading 〕━━━╮
+┃ ✦ Fetching Spotify song
+┃ ✦ Please wait...
+╰━━━━━━━━━━━━━━━━━━╯`
+
         }, { quoted: message });
 
-        // Success react
+        // ======================
+        // API REQUEST
+        // ======================
+
+        const apiUrl =
+
+`https://api.fabdl.com/spotify/get?url=${encodeURIComponent(spotifyUrl)}`;
+
+        const response =
+        await axios.get(apiUrl);
+
+        // ======================
+        // CHECK RESPONSE
+        // ======================
+
+        if (
+            !response.data ||
+            !response.data.result
+        ) {
+
+            throw new Error(
+                'Invalid API response'
+            );
+
+        }
+
+        const data =
+        response.data.result;
+
+        const title =
+        data.title || 'Unknown';
+
+        const artist =
+        data.artist || 'Unknown';
+
+        const thumbnail =
+        data.image;
+
+        const downloadUrl =
+        data.download_url;
+
+        if (!downloadUrl) {
+
+            throw new Error(
+                'No download URL'
+            );
+
+        }
+
+        // ======================
+        // SEND AUDIO
+        // ======================
+
         await sock.sendMessage(chatId, {
+
+            audio: {
+                url: downloadUrl
+            },
+
+            mimetype:
+            'audio/mpeg',
+
+            fileName:
+            `${title}.mp3`,
+
+            contextInfo: {
+
+                externalAdReply: {
+
+                    showAdAttribution: false,
+
+                    title:
+                    title,
+
+                    body:
+                    artist,
+
+                    mediaType: 1,
+
+                    renderLargerThumbnail: true,
+
+                    thumbnailUrl:
+                    thumbnail
+
+                }
+
+            }
+
+        }, { quoted: message });
+
+        // ======================
+        // SUCCESS REACTION
+        // ======================
+
+        await sock.sendMessage(chatId, {
+
             react: {
                 text: '✅',
                 key: message.key
             }
+
         });
 
     } catch (error) {
-        console.log('[SPOTIFY ERROR]', error?.response?.data || error.message);
 
-        // Error react
+        console.log(
+            'Spotify Error:',
+            error
+        );
+
+        // ======================
+        // ERROR REACTION
+        // ======================
+
         await sock.sendMessage(chatId, {
+
             react: {
                 text: '❌',
                 key: message.key
             }
+
         });
 
-        await sock.sendMessage(chatId, {
-            text:
-`❌ Spotify download failed.
+        // ======================
+        // ERROR MESSAGE
+        // ======================
 
-⚠️ API server down or song unavailable.`
+        return await sock.sendMessage(chatId, {
+
+            text:
+`╭━━━〔 ❌ Spotify Error 〕━━━╮
+┃ ✦ Download failed
+┃ ✦ Song unavailable or
+┃ ✦ API server offline
+┃
+┃ ✦ Please try again later
+╰━━━━━━━━━━━━━━━━━━╯`
+
         }, { quoted: message });
+
     }
+
 }
 
 module.exports = spotifyCommand;
