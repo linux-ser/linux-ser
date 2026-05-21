@@ -1,9 +1,3 @@
-const math = require('mathjs');
-
-// ======================
-// CALC COMMAND
-// ======================
-
 async function calcCommand(
     sock,
     chatId,
@@ -50,7 +44,7 @@ async function calcCommand(
 ┃ 📌 Example:
 ┃ ✦ .calc 2+2
 ┃ ✦ .calc 10*5
-┃ ✦ .calc sqrt(25)
+┃ ✦ .calc (5+5)*2
 ╰━━━━━━━━━━━━━━━━━━╯`
 
             }, { quoted: message });
@@ -64,11 +58,26 @@ async function calcCommand(
         await react('⚡');
 
         // ======================
+        // SAFE FILTER
+        // ======================
+
+        const allowed =
+        /^[0-9+\-*/().%\s]+$/;
+
+        if (!allowed.test(text)) {
+
+            throw new Error(
+                'Invalid characters'
+            );
+
+        }
+
+        // ======================
         // CALCULATE
         // ======================
 
         const result =
-        math.evaluate(text);
+        eval(text);
 
         // ======================
         // RESULT MESSAGE
