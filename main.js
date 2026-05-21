@@ -43,6 +43,7 @@ const { autoreadCommand, isAutoreadEnabled, handleAutoread } = require('./comman
 // Command imports
 const tagAllCommand = require('./commands/tagall');
 const helpCommand = require('./commands/help');
+const calcCommand = require('./commands/calc');
 const banCommand = require('./commands/ban');
 const { promoteCommand } = require('./commands/promote');
 const { demoteCommand } = require('./commands/demote');
@@ -397,6 +398,20 @@ async function handleMessages(sock, messageUpdate, printLog) {
             case userMessage === '.help' || userMessage === '.menu' || userMessage === '.bot' || userMessage === '.list':
                 await helpCommand(sock, chatId, message, global.channelLink);
                 commandExecuted = true;
+                break;
+            case userMessage.startsWith('.calc'): {
+                const text = userMessage
+                    .split(' ')
+                    .slice(1)
+                    .join(' ')
+                    .trim();
+                await calcCommand(
+                    sock,
+                    chatId,
+                    message,
+                    text
+                );
+            }
                 break;
             case userMessage === '.sticker' || userMessage === '.s':
                 await stickerCommand(sock, chatId, message);
