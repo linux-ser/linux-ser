@@ -178,7 +178,7 @@ async function slowedCommand(sock, chatId, message) {
                 imageBuffer: fs.readFileSync(
                     path.join(
                         __dirname,
-                        '../assets/bot.image.jpg'
+                        '../assets/bot_image.jpg'
                     )
                 )
             }
