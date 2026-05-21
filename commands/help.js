@@ -1,6 +1,7 @@
 const settings = require('../settings');
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 
 async function helpCommand(sock, chatId, message) {
     // ⏳ Loading Reaction
@@ -259,7 +260,12 @@ async function helpCommand(sock, chatId, message) {
             '../assets/bot_image.jpg'
         );
 
-        const audioPath = path.join(
+        const mp3Path = path.join(
+            __dirname,
+            '../assets/menu.mp3'
+        );
+
+        const oggPath = path.join(
             __dirname,
             '../assets/menu.ogg'
         );
@@ -295,19 +301,49 @@ async function helpCommand(sock, chatId, message) {
         }
 
         // =========================
-        // SEND VOICE NOTE
+        // CONVERT MP3 TO REAL
+        // WHATSAPP OPUS
         // =========================
 
-        if (fs.existsSync(audioPath)) {
+        if (fs.existsSync(mp3Path)) {
 
+            // Delete old ogg
+            if (fs.existsSync(oggPath)) {
+
+                fs.unlinkSync(oggPath);
+
+            }
+
+            // Convert properly
+            execSync(
+
+`ffmpeg -y -i "${mp3Path}" \
+-map 0:a \
+-c:a libopus \
+-b:a 128k \
+-vbr on \
+-compression_level 10 \
+-application voip \
+-frame_duration 20 \
+-ar 48000 \
+-ac 1 \
+"${oggPath}"`
+
+            );
+
+            // Small delay
             await new Promise(resolve =>
                 setTimeout(resolve, 1000)
             );
 
+            // =========================
+            // SEND PLAYABLE VOICE
+            // =========================
+
             await sock.sendMessage(chatId, {
 
                 audio: {
-                    url: audioPath
+                    url: oggPath
                 },
 
                 mimetype:
@@ -337,7 +373,7 @@ async function helpCommand(sock, chatId, message) {
         await sock.sendMessage(chatId, {
 
             text:
-            '❌ Error sending help menu.'
+            '❌ Error sending menu voice.'
 
         }, { quoted: message });
 
