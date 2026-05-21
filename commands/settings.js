@@ -41,7 +41,7 @@ async function settingsCommand(
     try {
 
         // ======================
-        // SETTINGS REACTION
+        // REACTION
         // ======================
 
         await sock.sendMessage(chatId, {
@@ -102,7 +102,7 @@ async function settingsCommand(
         './data';
 
         // ======================
-        // READ DATA
+        // READ FILES
         // ======================
 
         const mode =
@@ -171,16 +171,24 @@ async function settingsCommand(
                 welcome: {},
                 goodbye: {},
                 chatbot: {},
-                antitag: {}
+                antitag: {},
+                autoReaction: {
+                    enabled: false
+                }
 
             }
 
         );
 
+        // ======================
+        // FIXED AUTOREACTION
+        // ======================
+
         const autoReaction =
-        Boolean(
-            userGroupData.autoReaction
-        );
+
+            userGroupData
+            .autoReaction
+            ?.enabled || false;
 
         const groupId =
         isGroup ? chatId : null;
@@ -294,7 +302,7 @@ async function settingsCommand(
         }
 
         // ======================
-        // SEND SETTINGS
+        // SEND MESSAGE
         // ======================
 
         await sock.sendMessage(chatId, {
