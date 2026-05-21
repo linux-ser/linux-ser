@@ -6,7 +6,7 @@ async function pinCommand(sock, chatId, message) {
 
         if (!quoted || !quoted.stanzaId) {
             return sock.sendMessage(chatId, {
-                text: 'Reply to a message to pin it!'
+                text: 'Reply to a message to pin!'
             }, { quoted: message });
         }
 
@@ -18,22 +18,18 @@ async function pinCommand(sock, chatId, message) {
         });
 
         // Pin message
-        await sock.chatModify({
+        await sock.sendMessage(chatId, {
             pin: {
                 type: 1,
                 time: 86400,
                 key: {
                     remoteJid: chatId,
-                    fromMe: quoted.participant === sock.user.id,
+                    fromMe: false,
                     id: quoted.stanzaId,
                     participant: quoted.participant
                 }
             }
-        }, chatId);
-
-        await sock.sendMessage(chatId, {
-            text: '📌 Message pinned successfully!'
-        }, { quoted: message });
+        });
 
     } catch (e) {
 
