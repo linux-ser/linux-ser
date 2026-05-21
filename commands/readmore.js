@@ -2,21 +2,26 @@ async function readmoreCommand(sock, chatId, message, text) {
 
     try {
 
-        if (!text) {
+        if (!text.includes(',')) {
 
             return sock.sendMessage(chatId, {
-                text: 'Example: .readmore Hello'
+                text: 'Example: .readmore hello, haha'
             }, { quoted: message });
 
         }
 
-        // Invisible readmore character
-        const more = String.fromCharCode(8206).repeat(4001);
+        // Split text
+        const parts = text.split(',');
 
-        // Final message
-        const finalText = `${text}${more}
+        const firstText = parts[0].trim();
+        const secondText = parts.slice(1).join(',').trim();
 
-🧃 ʀᴇᴀᴅᴍᴏʀᴇ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ`;
+        // 70 empty lines
+        const space = '\n'.repeat(70);
+
+        // Final output
+        const finalText =
+`${firstText}${space}${secondText}`;
 
         await sock.sendMessage(chatId, {
             text: finalText
