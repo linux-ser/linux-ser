@@ -78,7 +78,7 @@ async function demoteCommand(sock, chatId, mentionedJids, message) {
             `│ ⏰ 𝙏𝙞𝙢𝙚           :  ${indianTime}\n` +
             `│\n` +
             `╰───────────────⌁\n\n` +
-            `> ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐋ɪɴᴜx 𝐒ᴇʀ ⚡`;
+            `> ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ ⚡`;
         
         await sock.sendMessage(chatId, { 
             text: demotionMessage,
@@ -141,7 +141,7 @@ async function handleDemotionEvent(sock, groupId, participants, author) {
             `│ ⏰ 𝙏𝙞𝙢𝙚           :  ${indianTime}\n` +
             `│\n` +
             `╰───────────────⌁\n\n` +
-            `> ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐋ɪɴᴜx 𝐒ᴇʀ ⚡`;
+            `> ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ ⚡`;
         
         await sock.sendMessage(groupId, {
             text: demotionMessage,
