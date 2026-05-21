@@ -264,22 +264,9 @@ async function helpCommand(sock, chatId, message) {
         '../assets/menu.ogg'
     );
 
-    // Send WhatsApp voice
-    if (fs.existsSync(audioPath)) {
-
-        await sock.sendMessage(chatId, {
-
-            audio: fs.readFileSync(audioPath),
-
-            mimetype: 'audio/ogg; codecs=opus',
-
-            ptt: true
-
-        }, { quoted: message });
-
-    }
-
-    // Send image menu
+    // =========================
+    // SEND MENU FIRST
+    // =========================
     if (fs.existsSync(imagePath)) {
 
         const imageBuffer =
@@ -300,7 +287,6 @@ async function helpCommand(sock, chatId, message) {
 
     } else {
 
-        // Fallback text menu
         await sock.sendMessage(chatId, {
 
             text: helpMessage,
@@ -309,6 +295,25 @@ async function helpCommand(sock, chatId, message) {
                 message.key.participant ||
                 message.key.remoteJid
             ]
+
+        }, { quoted: message });
+
+    }
+
+    // =========================
+    // SEND VOICE AFTER MENU
+    // =========================
+    if (fs.existsSync(audioPath)) {
+
+        await sock.sendMessage(chatId, {
+
+            audio:
+            fs.readFileSync(audioPath),
+
+            mimetype:
+            'audio/ogg; codecs=opus',
+
+            ptt: true
 
         }, { quoted: message });
 
@@ -328,7 +333,7 @@ async function helpCommand(sock, chatId, message) {
 
     }, { quoted: message });
 
-}
+    }
 
 }
 
