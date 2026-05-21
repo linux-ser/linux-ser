@@ -45,7 +45,7 @@ async function helpCommand(sock, chatId, message) {
 │✺│  ✦ 𝐓ɪᴍᴇ         : ${time}
 │✺│  ✦ 𝐃ᴀᴛᴇ        : ${date}
 │✺│  ✦ 𝐏ʀᴇꜰɪх      : [ . ]
-│✺│  ✦ 𝐂ᴍᴅꜱ       : 142
+│✺│  ✦ 𝐂ᴍᴅꜱ       : 143
 │✺╰───────────────
 ╰──────────────────╯
 
@@ -162,6 +162,7 @@ async function helpCommand(sock, chatId, message) {
 ┃ ✦ .flirt
 ┃ ✦ .love
 ┃ ✦ .teddy
+┃ ✦ .readmore <text>
 ┃ ✦ .shayari
 ┃ ✦ .goodnight
 ┃ ✦ .roseday
