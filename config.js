@@ -25,8 +25,13 @@ global.APIKeys = {
     'https://api-fgmods.ddns.net': 'fg-dylux'
 };
 
+// OPENAI API KEY
+global.OPENAI_API_KEY =
+    process.env.OPENAI_API_KEY || '';
+
 module.exports = {
     WARN_COUNT: 3,
     APIs: global.APIs,
-    APIKeys: global.APIKeys
+    APIKeys: global.APIKeys,
+    OPENAI_API_KEY: global.OPENAI_API_KEY
 };
