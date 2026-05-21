@@ -253,26 +253,85 @@ async function helpCommand(sock, chatId, message) {
 `;
 
     try {
-        const imagePath = path.join(__dirname, '../assets/bot_image.jpg');
-        
-        if (fs.existsSync(imagePath)) {
-            const imageBuffer = fs.readFileSync(imagePath);
-            
-            await sock.sendMessage(chatId, {
-                image: imageBuffer,
-                caption: helpMessage,
-                mentions: [message.key.participant || message.key.remoteJid]
-            }, { quoted: message });
-        } else {
-            await sock.sendMessage(chatId, {
-                text: helpMessage,
-                mentions: [message.key.participant || message.key.remoteJid]
-            }, { quoted: message });
-        }
-    } catch (error) {
-        console.error('Error in help command:', error);
-        await sock.sendMessage(chatId, { text: helpMessage }, { quoted: message });
-    }
-}
 
-module.exports = helpCommand;
+    const imagePath =
+    path.join(
+        __dirname,
+        '../assets/bot_image.jpg'
+    );
+
+    const audioPath =
+    path.join(
+        __dirname,
+        '../assets/menu.ogg'
+    );
+
+    // Send WhatsApp voice
+    if (fs.existsSync(audioPath)) {
+
+        await sock.sendMessage(chatId, {
+
+            audio: {
+                url: audioPath
+            },
+
+            mimetype:
+            'audio/ogg; codecs=opus',
+
+            ptt: true
+
+        }, { quoted: message });
+
+    }
+
+    // Send menu image
+    if (fs.existsSync(imagePath)) {
+
+        const imageBuffer =
+        fs.readFileSync(imagePath);
+
+        await sock.sendMessage(chatId, {
+
+            image: imageBuffer,
+
+            caption: helpMessage,
+
+            mentions: [
+                message.key.participant ||
+                message.key.remoteJid
+            ]
+
+        }, { quoted: message });
+
+    }
+
+    // Fallback text
+    else {
+
+        await sock.sendMessage(chatId, {
+
+            text: helpMessage,
+
+            mentions: [
+                message.key.participant ||
+                message.key.remoteJid
+            ]
+
+        }, { quoted: message });
+
+    }
+
+} catch (error) {
+
+    console.error(
+        'Help Command Error:',
+        error
+    );
+
+    await sock.sendMessage(chatId, {
+
+        text: helpMessage
+
+    }, { quoted: message });
+
+    }
