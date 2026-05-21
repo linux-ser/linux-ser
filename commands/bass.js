@@ -114,7 +114,7 @@ async function bassCommand(sock, chatId, message) {
         await new Promise((resolve, reject) => {
 
             ffmpeg(inputPath)
-                .audioFilter('bass=g=35')
+                .audioFilter('bass=g=20:f=100:w=0.5')
                 .audioCodec('libmp3lame')
                 .format('mp3')
                 .save(outputPath)
