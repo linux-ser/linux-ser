@@ -45,7 +45,7 @@ async function helpCommand(sock, chatId, message) {
 │✺│  ✦ 𝐓ɪᴍᴇ         : ${time}
 │✺│  ✦ 𝐃ᴀᴛᴇ        : ${date}
 │✺│  ✦ 𝐏ʀᴇꜰɪх      : [ . ]
-│✺│  ✦ 𝐂ᴍᴅꜱ       : 144
+│✺│  ✦ 𝐂ᴍᴅꜱ       : 142
 │✺╰───────────────
 ╰──────────────────╯
 
@@ -75,8 +75,6 @@ async function helpCommand(sock, chatId, message) {
 ┃ ✦ .demote @user
 ┃ ✦ .mute <minutes>
 ┃ ✦ .unmute
-┃ ✦ .pin
-┃ ✦ .unpin
 ┃ ✦ .delete or .del
 ┃ ✦ .kick @user
 ┃ ✦ .warnings @user
