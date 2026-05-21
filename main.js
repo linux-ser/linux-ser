@@ -54,6 +54,7 @@ const warnCommand = require('./commands/warn');
 const warningsCommand = require('./commands/warnings');
 const ttsCommand = require('./commands/tts');
 const tovnCommand = require('./commands/tovn');
+const tomp3Command = require('./commands/tomp3');
 const { tictactoeCommand, handleTicTacToeMove } = require('./commands/tictactoe');
 const { incrementMessageCount, topMembers } = require('./commands/topmembers');
 const ownerCommand = require('./commands/owner');
@@ -414,6 +415,14 @@ async function handleMessages(sock, messageUpdate, printLog) {
             case userMessage === '.vn':
             case userMessage === '.ptt':
                 await tovnCommand(sock, chatId, message);
+                commandExecuted = true;
+                break;
+            case userMessage === '.tomp3':
+                await tomp3Command(
+                sock,
+                chatId,
+                message
+              );
                 commandExecuted = true;
                 break;
             case userMessage.startsWith('.delete') || userMessage.startsWith('.del'):
