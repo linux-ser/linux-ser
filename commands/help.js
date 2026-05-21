@@ -45,7 +45,7 @@ async function helpCommand(sock, chatId, message) {
 │✺│  ✦ 𝐓ɪᴍᴇ         : ${time}
 │✺│  ✦ 𝐃ᴀᴛᴇ        : ${date}
 │✺│  ✦ 𝐏ʀᴇꜰɪх      : [ . ]
-│✺│  ✦ 𝐂ᴍᴅꜱ       : 145
+│✺│  ✦ 𝐂ᴍᴅꜱ       : 146
 │✺╰───────────────
 ╰──────────────────╯
 
@@ -138,6 +138,7 @@ async function helpCommand(sock, chatId, message) {
 ┃ ✦ .tovoice
 ┃ ✦ .tomp3
 ┃ ✦ .bass
+┃ ✦ .slowed
 ╰━━━━━━━━━━━━━━━━━━╯
 
 ╭━━━❲ 𝐆ᴀᴍᴇ ❳━━━╮
