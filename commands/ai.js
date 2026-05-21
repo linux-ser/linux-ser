@@ -17,6 +17,7 @@ async function aiCommand(sock, chatId, message) {
         const query =
             args.slice(1).join(' ').trim();
 
+        // No query
         if (!query) {
 
             return await sock.sendMessage(chatId, {
@@ -61,7 +62,7 @@ Example:
 
         let answer = null;
 
-        // Try APIs one by one
+        // Try APIs
         for (const api of apis) {
 
             try {
@@ -78,35 +79,53 @@ Example:
 
                 const data = response.data;
 
-                // Different response formats
-                answer =
+                // Find valid string
+                answer = [
 
-                    data.result ||
-                    data.answer ||
-                    data.message ||
-                    data.data ||
-                    data.response ||
-                    data.text ||
-                    null;
+                    data.result,
+                    data.answer,
+                    data.message,
+                    data.data,
+                    data.response,
+                    data.text
 
-                // Object support
+                ].find(v =>
+
+                    typeof v === 'string' &&
+                    v.trim() !== '' &&
+                    v.trim().toLowerCase() !== 'null' &&
+                    v.trim().toLowerCase() !== 'undefined'
+
+                );
+
+                // Object response support
                 if (
-                    typeof answer === 'object'
+                    !answer &&
+                    typeof data === 'object'
                 ) {
 
-                    answer =
-                    JSON.stringify(
-                        answer,
-                        null,
-                        2
+                    const values =
+                    Object.values(data);
+
+                    answer = values.find(v =>
+
+                        typeof v === 'string' &&
+                        v.trim() !== '' &&
+                        v.trim().toLowerCase() !== 'null'
+
                     );
 
                 }
 
+                // Success
                 if (
-                    answer &&
-                    answer.length > 2
-                ) break;
+                    typeof answer === 'string' &&
+                    answer.trim().length > 2
+                ) {
+
+                    break;
+
+                }
 
             } catch (e) {
 
@@ -121,19 +140,15 @@ Example:
 
         }
 
-        // No answer
+        // No response
         if (!answer) {
 
-            return await sock.sendMessage(chatId, {
-
-                text:
-                '❌ AI server busy. Try again later.'
-
-            }, { quoted: message });
+            answer =
+            '❌ AI server busy. Please try again later.';
 
         }
 
-        // Send result
+        // Send answer
         await sock.sendMessage(chatId, {
 
             text: answer
