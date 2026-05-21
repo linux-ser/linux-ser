@@ -61,9 +61,7 @@ String.raw`(\_/)
         // Last frame add footer text
         if (i === frames.length - 1) {
 
-            finalText += `
-
-🧸 𝐓ᴇᴅᴅʏ 𝐒ᴇɴᴛ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ 🧃🕊️`;
+            finalText = `🧸 𝐓ᴇᴅᴅʏ 𝐒ᴇɴᴛ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ 🧃🕊️`;
         }
 
         await sock.sendMessage(chatId, {
