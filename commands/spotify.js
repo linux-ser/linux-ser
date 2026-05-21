@@ -90,11 +90,11 @@ async function spotifyCommand(
         // API REQUEST
         // ======================
 
-        const apiUrl =
-`https://api.spotifydown.com/download/${encodeURIComponent(spotifyUrl)}`;
+        const api =
+`https://api.spotifydownloader.pro/download/${encodeURIComponent(spotifyUrl)}`;
 
         const response =
-        await axios.get(apiUrl, {
+        await axios.get(api, {
 
             headers: {
                 'User-Agent':
@@ -104,44 +104,38 @@ async function spotifyCommand(
         });
 
         // ======================
-        // CHECK DATA
+        // DATA
         // ======================
-
-        if (
-            !response.data
-        ) {
-
-            throw new Error(
-                'Invalid API response'
-            );
-
-        }
 
         const data =
         response.data;
+
+        if (
+            !data ||
+            !data.download
+        ) {
+
+            throw new Error(
+                'No download link'
+            );
+
+        }
 
         const title =
         data.title ||
         'Spotify Song';
 
         const artist =
-        data.artists ||
+        data.artist ||
         'Unknown Artist';
 
         const thumbnail =
         data.cover ||
-        'https://i.imgur.com/8wKQZ5F.jpeg';
+
+'https://i.imgur.com/8wKQZ5F.jpeg';
 
         const downloadUrl =
-        data.link;
-
-        if (!downloadUrl) {
-
-            throw new Error(
-                'No download URL'
-            );
-
-        }
+        data.download;
 
         // ======================
         // SEND AUDIO
@@ -201,7 +195,7 @@ async function spotifyCommand(
 
         console.log(
             'Spotify Error:',
-            error
+            error.response?.data || error
         );
 
         // ======================
@@ -225,11 +219,11 @@ async function spotifyCommand(
 
             text:
 `╭━━━〔 ❌ Spotify Error 〕━━━╮
-┃ ✦ Download failed
-┃ ✦ Song unavailable or
-┃ ✦ API server offline
+┃ ✦ Failed to download song
+┃ ✦ Invalid Spotify link
+┃ ✦ or server offline
 ┃
-┃ ✦ Please try again later
+┃ ✦ Try another song later
 ╰━━━━━━━━━━━━━━━━━━╯`
 
         }, { quoted: message });
