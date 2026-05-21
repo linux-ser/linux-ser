@@ -1,15 +1,10 @@
 const fs = require('fs');
-
 const path = require('path');
-
-const { exec } =
-require('child_process');
+const { exec } = require('child_process');
 
 const {
     downloadMediaMessage
-} = require(
-    '@whiskeysockets/baileys'
-);
+} = require('@whiskeysockets/baileys');
 
 const cutAudio = async (
     sock,
@@ -21,9 +16,9 @@ const cutAudio = async (
 
     try {
 
-        // =====================
-        // GET REPLIED AUDIO
-        // =====================
+        // =========================
+        // GET QUOTED MESSAGE
+        // =========================
 
         const quoted =
         message.message
@@ -31,33 +26,46 @@ const cutAudio = async (
         ?.contextInfo
         ?.quotedMessage;
 
-        const audioMsg =
-        quoted?.audioMessage;
-
-        if (!audioMsg) {
+        if (!quoted) {
 
             return await sock.sendMessage(chatId, {
 
                 text:
-`❌ Reply to an audio.
+`❌ Reply to an audio message.
 
 Example:
 .cut 0:30 1:00`
 
-            }, {
-                quoted: message
-            });
+            }, { quoted: message });
 
         }
 
-        // =====================
-        // GET TIME
-        // =====================
+        // =========================
+        // DETECT AUDIO
+        // =========================
+
+        const mediaMessage =
+            quoted.audioMessage ||
+            quoted.documentMessage ||
+            quoted.videoMessage;
+
+        if (!mediaMessage) {
+
+            return await sock.sendMessage(chatId, {
+
+                text:
+'❌ Replied message is not audio.'
+
+            }, { quoted: message });
+
+        }
+
+        // =========================
+        // GET TIMES
+        // =========================
 
         const args =
-        userMessage
-        .split(' ')
-        .slice(1);
+        userMessage.trim().split(/\s+/).slice(1);
 
         if (args.length < 2) {
 
@@ -67,19 +75,16 @@ Example:
 `❌ Example:
 .cut 0:30 1:00`
 
-            }, {
-                quoted: message
-            });
+            }, { quoted: message });
 
         }
 
         const start = args[0];
-
         const end = args[1];
 
-        // =====================
-        // REACT
-        // =====================
+        // =========================
+        // REACTION
+        // =========================
 
         await sock.sendMessage(chatId, {
 
@@ -90,18 +95,15 @@ Example:
 
         });
 
-        // =====================
-        // DOWNLOAD AUDIO
-        // =====================
+        // =========================
+        // DOWNLOAD MEDIA
+        // =========================
 
         const buffer =
         await downloadMediaMessage(
 
             {
-                message: {
-                    audioMessage:
-                    audioMsg
-                }
+                message: quoted
             },
 
             'buffer',
@@ -116,45 +118,43 @@ Example:
 
         );
 
-        // =====================
-        // TEMP FOLDER
-        // =====================
+        // =========================
+        // TEMP
+        // =========================
 
         const tempDir =
-        path.join(
-            __dirname,
-            '../temp'
-        );
+        path.join(__dirname, '../temp');
 
-        if (
-            !fs.existsSync(tempDir)
-        ) {
+        if (!fs.existsSync(tempDir)) {
 
             fs.mkdirSync(tempDir);
 
         }
 
+        const timestamp =
+        Date.now();
+
         const inputPath =
         path.join(
             tempDir,
-            `${Date.now()}.mp3`
+            `${timestamp}.mp3`
         );
 
         const outputPath =
         path.join(
             tempDir,
-            `${Date.now()}_cut.mp3`
+            `${timestamp}_cut.mp3`
         );
 
         const finalPath =
         path.join(
             tempDir,
-            `${Date.now()}_final.mp3`
+            `${timestamp}_final.mp3`
         );
 
-        // =====================
-        // AUDIO COVER IMAGE
-        // =====================
+        // =========================
+        // COVER IMAGE
+        // =========================
 
         const coverPath =
         path.join(
@@ -167,40 +167,39 @@ Example:
             buffer
         );
 
-        // =====================
+        // =========================
         // CUT AUDIO
-        // =====================
+        // =========================
 
         exec(
 
-`ffmpeg -y -i "${inputPath}" -ss ${start} -to ${end} -c:a libmp3lame -b:a 320k "${outputPath}"`,
+`ffmpeg -y -i "${inputPath}" -ss ${start} -to ${end} -vn -c:a libmp3lame -b:a 320k "${outputPath}"`,
 
         async (err) => {
 
             if (err) {
 
-                console.log(err);
+                console.log(
+                    'Cut Error:',
+                    err
+                );
 
                 return await sock.sendMessage(chatId, {
 
                     text:
                     '❌ Failed to cut audio.'
 
-                }, {
-                    quoted: message
-                });
+                }, { quoted: message });
 
             }
 
-            // =====================
-            // ADD METADATA
-            // =====================
+            // =========================
+            // METADATA
+            // =========================
 
             let ffmpegCmd;
 
-            if (
-                fs.existsSync(coverPath)
-            ) {
+            if (fs.existsSync(coverPath)) {
 
                 ffmpegCmd =
 
@@ -231,21 +230,22 @@ Example:
 
             }
 
-            exec(
-
-                ffmpegCmd,
+            exec(ffmpegCmd,
 
             async (metaErr) => {
 
                 if (metaErr) {
 
-                    console.log(metaErr);
+                    console.log(
+                        'Metadata Error:',
+                        metaErr
+                    );
 
                 }
 
-                // =====================
+                // =========================
                 // SEND AUDIO
-                // =====================
+                // =========================
 
                 await sock.sendMessage(chatId, {
 
@@ -284,13 +284,11 @@ Example:
 
                     }
 
-                }, {
-                    quoted: message
-                });
+                }, { quoted: message });
 
-                // =====================
-                // SUCCESS REACTION
-                // =====================
+                // =========================
+                // SUCCESS
+                // =========================
 
                 await sock.sendMessage(chatId, {
 
@@ -301,9 +299,9 @@ Example:
 
                 });
 
-                // =====================
-                // DELETE TEMP FILES
-                // =====================
+                // =========================
+                // DELETE TEMP
+                // =========================
 
                 [
                     inputPath,
@@ -327,16 +325,17 @@ Example:
 
     } catch (error) {
 
-        console.log(error);
+        console.log(
+            'Cut Command Error:',
+            error
+        );
 
         await sock.sendMessage(chatId, {
 
             text:
-            '❌ Error cutting audio.'
+            '❌ Error processing audio.'
 
-        }, {
-            quoted: message
-        });
+        }, { quoted: message });
 
     }
 
