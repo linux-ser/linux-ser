@@ -4,7 +4,7 @@ async function pinCommand(sock, chatId, message) {
 
         const quoted = message.message?.extendedTextMessage?.contextInfo;
 
-        if (!quoted || !quoted.stanzaId) {
+        if (!quoted || !quoted.quotedMessage) {
             return sock.sendMessage(chatId, {
                 text: 'Reply to a message to pin!'
             }, { quoted: message });
@@ -17,18 +17,24 @@ async function pinCommand(sock, chatId, message) {
             }
         });
 
-        // Pin message
+        let text = '📌 *PINNED MESSAGE*\n\n';
+
+        if (quoted.quotedMessage.conversation) {
+            text += quoted.quotedMessage.conversation;
+        }
+
+        else if (quoted.quotedMessage.extendedTextMessage?.text) {
+            text += quoted.quotedMessage.extendedTextMessage.text;
+        }
+
+        else {
+            text += '_Media message pinned_';
+        }
+
+        text += '\n\n🧃 ᴘɪɴɴᴇᴅ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ';
+
         await sock.sendMessage(chatId, {
-            pin: {
-                type: 1,
-                time: 86400,
-                key: {
-                    remoteJid: chatId,
-                    fromMe: false,
-                    id: quoted.stanzaId,
-                    participant: quoted.participant
-                }
-            }
+            text
         });
 
     } catch (e) {
