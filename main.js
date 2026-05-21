@@ -44,6 +44,7 @@ const { autoreadCommand, isAutoreadEnabled, handleAutoread } = require('./comman
 const tagAllCommand = require('./commands/tagall');
 const helpCommand = require('./commands/help');
 const calcCommand = require('./commands/calc');
+const { musicDetectCommand, handleMusicReply } = require('./commands/findsong');
 const banCommand = require('./commands/ban');
 const { promoteCommand } = require('./commands/promote');
 const { demoteCommand } = require('./commands/demote');
@@ -468,6 +469,54 @@ async function handleMessages(sock, messageUpdate, printLog) {
              );
                 commandExecuted = true;
                 break;
+            switch (true) {
+
+    // ======================
+    // FIND SONG COMMAND
+    // ======================
+
+    case userMessage.startsWith('.music'):
+
+    case userMessage.startsWith('.findsong'): {
+
+        await musicDetectCommand(
+
+            sock,
+            chatId,
+            message,
+            sender
+
+        );
+
+    }
+
+    break;
+
+}
+
+// ======================
+// YES / NO REPLY HANDLER
+// ======================
+
+if (
+
+    userMessage.toLowerCase() === 'yes' ||
+
+    userMessage.toLowerCase() === 'no'
+
+) {
+
+    await handleMusicReply(
+
+        sock,
+        chatId,
+        message,
+        sender,
+        userMessage
+
+    );
+
+}
             case userMessage.startsWith('.delete') || userMessage.startsWith('.del'):
                 await deleteCommand(sock, chatId, message, senderId);
                 break;
