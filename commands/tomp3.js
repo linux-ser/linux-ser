@@ -114,12 +114,29 @@ async function tomp3Command(sock, chatId, message) {
 
         });
 
-        // Add metadata
+        // Add MP3 metadata + cover
         NodeID3.write({
-            title: '𝐋ɪɴᴜх 𝐒ᴇʀ 🧃🕊️',
+
+            title: '♪ 𝐕ɪʙᴇ 𝐁ʏ 𝐋ꜱ',
             artist: '𝐋ɪɴᴜх 𝐒ᴇʀ 🧃🕊️',
             album: '𝐋ɪɴᴜх 𝐒ᴇʀ',
-            performerInfo: 'linux ser'
+            performerInfo: '𝐋ɪɴᴜх 𝐒ᴇʀ',
+
+            image: {
+                mime: 'image/jpeg',
+                type: {
+                    id: 3,
+                    name: 'front cover'
+                },
+                description: 'Cover',
+                imageBuffer: fs.readFileSync(
+                    path.join(
+                        __dirname,
+                        '../assets/bot_image.jpg'
+                    )
+                )
+            }
+
         }, outputPath);
 
         // Final MP3
@@ -128,9 +145,11 @@ async function tomp3Command(sock, chatId, message) {
 
         // Send MP3
         await sock.sendMessage(chatId, {
+
             audio: mp3Buffer,
             mimetype: 'audio/mpeg',
             fileName: 'linuxser.mp3',
+
             contextInfo: {
                 externalAdReply: {
                     title: '𝐋ɪɴᴜх 𝐒ᴇʀ 🧃🕊️',
@@ -140,6 +159,7 @@ async function tomp3Command(sock, chatId, message) {
                     renderLargerThumbnail: true
                 }
             }
+
         }, { quoted: message });
 
         // Cleanup
