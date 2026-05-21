@@ -56,6 +56,7 @@ const ttsCommand = require('./commands/tts');
 const tovnCommand = require('./commands/tovn');
 const tomp3Command = require('./commands/tomp3');
 const bassCommand = require('./commands/bass');
+const slowedCommand = require('./commands/slowed');
 const { tictactoeCommand, handleTicTacToeMove } = require('./commands/tictactoe');
 const { incrementMessageCount, topMembers } = require('./commands/topmembers');
 const ownerCommand = require('./commands/owner');
@@ -428,6 +429,14 @@ async function handleMessages(sock, messageUpdate, printLog) {
                 break;
             case userMessage === '.bass':
                 await bassCommand(
+                sock,
+                chatId,
+                message
+             );
+                commandExecuted = true;
+                break;
+            case userMessage === '.slowed':
+                await slowedCommand(
                 sock,
                 chatId,
                 message
