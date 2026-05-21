@@ -55,6 +55,7 @@ const warningsCommand = require('./commands/warnings');
 const ttsCommand = require('./commands/tts');
 const tovnCommand = require('./commands/tovn');
 const tomp3Command = require('./commands/tomp3');
+const cutAudio = require('./commands/cut');
 const bassCommand = require('./commands/bass');
 const slowedCommand = require('./commands/slowed');
 const { tictactoeCommand, handleTicTacToeMove } = require('./commands/tictactoe');
@@ -426,6 +427,15 @@ async function handleMessages(sock, messageUpdate, printLog) {
                 message
               );
                 commandExecuted = true;
+                break;
+            case userMessage === '.cut':
+                await cutAudio(
+                sock,
+                chatId,
+                message,
+                body,
+                logger
+              );
                 break;
             case userMessage === '.bass':
                 await bassCommand(
