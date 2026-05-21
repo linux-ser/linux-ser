@@ -3,71 +3,284 @@ const path = require('path');
 const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
 const isOwnerOrSudo = require('../lib/isOwner');
 
-async function setProfilePicture(sock, chatId, msg) {
+async function setProfilePicture(
+    sock,
+    chatId,
+    msg
+) {
+
     try {
-        const senderId = msg.key.participant || msg.key.remoteJid;
-        const isOwner = await isOwnerOrSudo(senderId, sock, chatId);
-        
-        if (!msg.key.fromMe && !isOwner) {
-            await sock.sendMessage(chatId, { 
-                text: '❌ This command is only available for the owner!' 
+
+        // ======================
+        // OWNER CHECK
+        // ======================
+
+        const senderId =
+
+            msg.key.participant ||
+
+            msg.key.remoteJid;
+
+        const isOwner =
+        await isOwnerOrSudo(
+
+            senderId,
+            sock,
+            chatId
+
+        );
+
+        if (
+            !msg.key.fromMe &&
+            !isOwner
+        ) {
+
+            return await sock.sendMessage(chatId, {
+
+                text:
+`╭━━━〔 ❌ Access Denied 〕━━━╮
+┃ ✦ Only bot owner
+┃ ✦ can use this command
+╰━━━━━━━━━━━━━━━━━━╯`
+
             });
-            return;
+
         }
 
-        // Check if message is a reply
-        const quotedMessage = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+        // ======================
+        // REACTION
+        // ======================
+
+        await sock.sendMessage(chatId, {
+
+            react: {
+                text: '🖼️',
+                key: msg.key
+            }
+
+        });
+
+        // ======================
+        // CHECK REPLY
+        // ======================
+
+        const quotedMessage =
+
+            msg.message
+            ?.extendedTextMessage
+            ?.contextInfo
+            ?.quotedMessage;
+
         if (!quotedMessage) {
-            await sock.sendMessage(chatId, { 
-                text: '⚠️ Please reply to an image with the .setpp command!' 
-            });
-            return;
+
+            return await sock.sendMessage(chatId, {
+
+                text:
+`╭━━━〔 🖼️ Set Profile Picture 〕━━━╮
+┃ ✦ Reply to an image
+┃ ✦ to update bot profile
+┃
+┃ 📌 Example:
+┃ ✦ Reply image + .setpp
+╰━━━━━━━━━━━━━━━━━━━━━━╯`
+
+            }, { quoted: msg });
+
         }
 
-        // Check if quoted message contains an image
-        const imageMessage = quotedMessage.imageMessage || quotedMessage.stickerMessage;
+        // ======================
+        // CHECK IMAGE
+        // ======================
+
+        const imageMessage =
+
+            quotedMessage.imageMessage ||
+
+            quotedMessage.stickerMessage;
+
         if (!imageMessage) {
-            await sock.sendMessage(chatId, { 
-                text: '❌ The replied message must contain an image!' 
-            });
-            return;
+
+            return await sock.sendMessage(chatId, {
+
+                text:
+`╭━━━〔 ⚠️ Invalid Reply 〕━━━╮
+┃ ✦ Replied message
+┃ ✦ must contain image
+╰━━━━━━━━━━━━━━━━━━╯`
+
+            }, { quoted: msg });
+
         }
 
-        // Create tmp directory if it doesn't exist
-        const tmpDir = path.join(process.cwd(), 'tmp');
-        if (!fs.existsSync(tmpDir)) {
-            fs.mkdirSync(tmpDir, { recursive: true });
+        // ======================
+        // TMP DIRECTORY
+        // ======================
+
+        const tmpDir =
+
+        path.join(
+            process.cwd(),
+            'tmp'
+        );
+
+        if (
+            !fs.existsSync(tmpDir)
+        ) {
+
+            fs.mkdirSync(
+
+                tmpDir,
+
+                {
+                    recursive: true
+                }
+
+            );
+
         }
 
-        // Download the image
-        const stream = await downloadContentFromMessage(imageMessage, 'image');
-        let buffer = Buffer.from([]);
-        
-        for await (const chunk of stream) {
-            buffer = Buffer.concat([buffer, chunk]);
+        // ======================
+        // DOWNLOAD IMAGE
+        // ======================
+
+        const stream =
+
+        await downloadContentFromMessage(
+
+            imageMessage,
+            'image'
+
+        );
+
+        let buffer =
+        Buffer.from([]);
+
+        for await (
+            const chunk of stream
+        ) {
+
+            buffer =
+            Buffer.concat([
+                buffer,
+                chunk
+            ]);
+
         }
 
-        const imagePath = path.join(tmpDir, `profile_${Date.now()}.jpg`);
-        
-        // Save the image
-        fs.writeFileSync(imagePath, buffer);
+        const imagePath =
 
-        // Set the profile picture
-        await sock.updateProfilePicture(sock.user.id, { url: imagePath });
+        path.join(
 
-        // Clean up the temporary file
-        fs.unlinkSync(imagePath);
+            tmpDir,
 
-        await sock.sendMessage(chatId, { 
-            text: '✅ Successfully updated bot profile picture!' 
+`profile_${Date.now()}.jpg`
+
+        );
+
+        // ======================
+        // SAVE IMAGE
+        // ======================
+
+        fs.writeFileSync(
+            imagePath,
+            buffer
+        );
+
+        // ======================
+        // UPDATE PROFILE
+        // ======================
+
+        await sock.updateProfilePicture(
+
+            sock.user.id,
+
+            {
+                url: imagePath
+            }
+
+        );
+
+        // ======================
+        // DELETE TEMP FILE
+        // ======================
+
+        try {
+
+            fs.unlinkSync(
+                imagePath
+            );
+
+        }
+
+        catch (_) {}
+
+        // ======================
+        // SUCCESS MESSAGE
+        // ======================
+
+        await sock.sendMessage(chatId, {
+
+            text:
+`╭━━━〔 ✅ Profile Updated 〕━━━╮
+┃ ✦ Bot profile picture
+┃ ✦ updated successfully
+╰━━━━━━━━━━━━━━━━━━╯`
+
         });
 
-    } catch (error) {
-        console.error('Error in setpp command:', error);
-        await sock.sendMessage(chatId, { 
-            text: '❌ Failed to update profile picture!' 
+        // ======================
+        // SUCCESS REACTION
+        // ======================
+
+        await sock.sendMessage(chatId, {
+
+            react: {
+                text: '✅',
+                key: msg.key
+            }
+
         });
+
     }
+
+    catch (error) {
+
+        console.error(
+            'Error in setpp command:',
+            error
+        );
+
+        // ======================
+        // ERROR REACTION
+        // ======================
+
+        await sock.sendMessage(chatId, {
+
+            react: {
+                text: '❌',
+                key: msg.key
+            }
+
+        });
+
+        // ======================
+        // ERROR MESSAGE
+        // ======================
+
+        await sock.sendMessage(chatId, {
+
+            text:
+`╭━━━〔 ❌ SetPP Error 〕━━━╮
+┃ ✦ Failed to update
+┃ ✦ profile picture
+┃
+┃ ✦ Try again later
+╰━━━━━━━━━━━━━━━━━━╯`
+
+        });
+
+    }
+
 }
 
-module.exports = setProfilePicture; 
+module.exports = setProfilePicture;
