@@ -65,14 +65,6 @@ async function attpCommand(
         await react('🪄');
 
         // ======================
-        // API URL
-        // ======================
-
-        const apiUrl =
-
-`https://api.xteam.xyz/attp?file&text=${encodeURIComponent(text)}`;
-
-        // ======================
         // TMP DIRECTORY
         // ======================
 
@@ -87,13 +79,8 @@ async function attpCommand(
         ) {
 
             fs.mkdirSync(
-
                 tmpDir,
-
-                {
-                    recursive: true
-                }
-
+                { recursive: true }
             );
 
         }
@@ -104,21 +91,23 @@ async function attpCommand(
 
         const gifPath =
         path.join(
-
             tmpDir,
-
-`attp_${Date.now()}.gif`
-
+            `attp_${Date.now()}.gif`
         );
 
         const webpPath =
         path.join(
-
             tmpDir,
-
-`attp_${Date.now()}.webp`
-
+            `attp_${Date.now()}.webp`
         );
+
+        // ======================
+        // WORKING API
+        // ======================
+
+        const apiUrl =
+
+`https://api.botcahx.eu.org/api/maker/attp?text=${encodeURIComponent(text)}&apikey=Admin`;
 
         // ======================
         // DOWNLOAD GIF
@@ -192,6 +181,20 @@ async function attpCommand(
             }
 
         );
+
+        // ======================
+        // CHECK FILE
+        // ======================
+
+        if (
+            !fs.existsSync(webpPath)
+        ) {
+
+            throw new Error(
+                'Sticker conversion failed'
+            );
+
+        }
 
         // ======================
         // READ WEBP
