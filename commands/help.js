@@ -263,7 +263,7 @@ async function helpCommand(sock, chatId, message) {
     const audioPath =
     path.join(
         __dirname,
-        '../assets/menu.ogg'
+        '../assets/menu.mp3'
     );
 
     // Send WhatsApp voice
@@ -276,7 +276,7 @@ async function helpCommand(sock, chatId, message) {
             },
 
             mimetype:
-            'audio/ogg; codecs=opus',
+            'audio/mp3; codecs=opus',
 
             ptt: true
 
