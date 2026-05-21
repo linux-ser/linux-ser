@@ -8,20 +8,12 @@ async function spotifyCommand(
 
     try {
 
-        // ======================
-        // GET TEXT
-        // ======================
-
         const text =
         message.message?.conversation ||
 
         message.message?.extendedTextMessage?.text ||
 
         '';
-
-        // ======================
-        // GET URL
-        // ======================
 
         const args =
         text.trim().split(/\s+/);
@@ -34,15 +26,6 @@ async function spotifyCommand(
         // ======================
 
         if (!spotifyUrl) {
-
-            await sock.sendMessage(chatId, {
-
-                react: {
-                    text: '🎵',
-                    key: message.key
-                }
-
-            });
 
             return await sock.sendMessage(chatId, {
 
@@ -60,7 +43,7 @@ async function spotifyCommand(
         }
 
         // ======================
-        // LOADING
+        // REACT
         // ======================
 
         await sock.sendMessage(chatId, {
@@ -79,12 +62,12 @@ async function spotifyCommand(
         const response =
         await axios.get(
 
-'https://spotify-downloader9.p.rapidapi.com/downloadSong',
+'https://download-all-in-one1.p.rapidapi.com/v1/social/autolink',
 
         {
 
             params: {
-                songId: spotifyUrl
+                url: spotifyUrl
             },
 
             headers: {
@@ -93,11 +76,15 @@ async function spotifyCommand(
 '022183ec85mshe1541adfddfee03p1c683cjsn8414fc91bc36',
 
                 'x-rapidapi-host':
-'spotify-downloader9.p.rapidapi.com'
+'download-all-in-one1.p.rapidapi.com'
 
             }
 
         });
+
+        console.log(
+            response.data
+        );
 
         // ======================
         // DATA
@@ -108,31 +95,35 @@ async function spotifyCommand(
 
         if (
             !data ||
-            !data.data
+            !data.medias ||
+            !data.medias.length
         ) {
 
             throw new Error(
-                'No result'
+                'No audio found'
             );
 
         }
 
-        const result =
-        data.data;
+        // ======================
+        // GET AUDIO
+        // ======================
 
-        const title =
-        result.title ||
-        'Spotify Song';
-
-        const artist =
-        result.artist ||
-        'Unknown Artist';
+        const audio =
+        data.medias.find(
+            v => v.type === 'audio'
+        ) || data.medias[0];
 
         const downloadUrl =
-        result.downloadLink;
+        audio.url;
+
+        const title =
+        data.title ||
+        'Spotify Song';
 
         const thumbnail =
-        result.cover ||
+        data.thumbnail ||
+
 'https://i.imgur.com/8wKQZ5F.jpeg';
 
         // ======================
@@ -161,7 +152,7 @@ async function spotifyCommand(
                     title,
 
                     body:
-                    artist,
+                    'Spotify Downloader',
 
                     mediaType: 1,
 
@@ -177,7 +168,7 @@ async function spotifyCommand(
         }, { quoted: message });
 
         // ======================
-        // SUCCESS
+        // SUCCESS REACTION
         // ======================
 
         await sock.sendMessage(chatId, {
@@ -205,15 +196,14 @@ async function spotifyCommand(
 
         });
 
-        await sock.sendMessage(chatId, {
+        return await sock.sendMessage(chatId, {
 
             text:
 `╭━━━〔 ❌ Spotify Error 〕━━━╮
 ┃ ✦ Download failed
-┃ ✦ Invalid link or
-┃ ✦ API limit reached
+┃ ✦ API issue or invalid link
 ┃
-┃ ✦ Try again later
+┃ ✦ Try another song
 ╰━━━━━━━━━━━━━━━━━━╯`
 
         }, { quoted: message });
