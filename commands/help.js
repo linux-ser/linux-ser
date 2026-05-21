@@ -254,29 +254,24 @@ async function helpCommand(sock, chatId, message) {
 
     try {
 
-    const imagePath =
-    path.join(
+    const imagePath = path.join(
         __dirname,
         '../assets/bot_image.jpg'
     );
 
-    const audioPath =
-    path.join(
+    const audioPath = path.join(
         __dirname,
         '../assets/menu.mp3'
     );
 
-    // Send voice
+    // Send WhatsApp voice
     if (fs.existsSync(audioPath)) {
 
         await sock.sendMessage(chatId, {
 
-            audio: {
-                url: audioPath
-            },
+            audio: fs.readFileSync(audioPath),
 
-            mimetype:
-            'audio/mp3; codecs=opus',
+            mimetype: 'audio/mp3; codecs=opus',
 
             ptt: true
 
@@ -284,7 +279,7 @@ async function helpCommand(sock, chatId, message) {
 
     }
 
-    // Send menu image
+    // Send image menu
     if (fs.existsSync(imagePath)) {
 
         const imageBuffer =
@@ -305,7 +300,7 @@ async function helpCommand(sock, chatId, message) {
 
     } else {
 
-        // Fallback text
+        // Fallback text menu
         await sock.sendMessage(chatId, {
 
             text: helpMessage,
@@ -335,4 +330,7 @@ async function helpCommand(sock, chatId, message) {
 
 }
 
-};
+}
+
+// IMPORTANT EXPORT
+module.exports = helpCommand;
