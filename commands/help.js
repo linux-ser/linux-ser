@@ -266,7 +266,7 @@ async function helpCommand(sock, chatId, message) {
         '../assets/menu.mp3'
     );
 
-    // Send WhatsApp voice
+    // Send voice
     if (fs.existsSync(audioPath)) {
 
         await sock.sendMessage(chatId, {
@@ -303,11 +303,9 @@ async function helpCommand(sock, chatId, message) {
 
         }, { quoted: message });
 
-    }
+    } else {
 
-    // Fallback text
-    else {
-
+        // Fallback text
         await sock.sendMessage(chatId, {
 
             text: helpMessage,
@@ -323,15 +321,18 @@ async function helpCommand(sock, chatId, message) {
 
 } catch (error) {
 
-    console.error(
-        'Help Command Error:',
+    console.log(
+        'Help Error:',
         error
     );
 
     await sock.sendMessage(chatId, {
 
-        text: helpMessage
+        text:
+        '❌ Error sending menu.'
 
     }, { quoted: message });
 
-    }
+}
+
+};
