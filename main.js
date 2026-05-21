@@ -464,46 +464,239 @@ async function handleMessages(sock, messageUpdate, printLog) {
                 await settingsCommand(sock, chatId, message);
                 break;
             case userMessage.startsWith('.mode'):
-                if (!message.key.fromMe && !senderIsOwnerOrSudo) {
-                    await sock.sendMessage(chatId, { text: 'Only bot owner can use this command!', ...channelInfo }, { quoted: message });
-                    return;
-                }
-                let data;
-                try {
-                    data = JSON.parse(fs.readFileSync('./data/messageCount.json'));
-                } catch (error) {
-                    console.error('Error reading access mode:', error);
-                    await sock.sendMessage(chatId, { text: 'Failed to read bot mode status', ...channelInfo });
-                    return;
-                }
 
-                const action = userMessage.split(' ')[1]?.toLowerCase();
-                if (!action) {
-                    const currentMode = data.isPublic ? 'public' : 'private';
-                    await sock.sendMessage(chatId, {
-                        text: `Current bot mode: *${currentMode}*\n\nUsage: .mode public/private\n\nExample:\n.mode public - Allow everyone to use bot\n.mode private - Restrict to owner only`,
-                        ...channelInfo
-                    }, { quoted: message });
-                    return;
-                }
+    // ======================
+    // OWNER CHECK
+    // ======================
 
-                if (action !== 'public' && action !== 'private') {
-                    await sock.sendMessage(chatId, {
-                        text: 'Usage: .mode public/private\n\nExample:\n.mode public - Allow everyone to use bot\n.mode private - Restrict to owner only',
-                        ...channelInfo
-                    }, { quoted: message });
-                    return;
-                }
+    if (
+        !message.key.fromMe &&
+        !senderIsOwnerOrSudo
+    ) {
 
-                try {
-                    data.isPublic = action === 'public';
-                    fs.writeFileSync('./data/messageCount.json', JSON.stringify(data, null, 2));
-                    await sock.sendMessage(chatId, { text: `Bot is now in *${action}* mode`, ...channelInfo });
-                } catch (error) {
-                    console.error('Error updating access mode:', error);
-                    await sock.sendMessage(chatId, { text: 'Failed to update bot access mode', ...channelInfo });
-                }
-                break;
+        await sock.sendMessage(chatId, {
+
+            text:
+`╭━━━〔 ❌ Access Denied 〕━━━╮
+┃ ✦ Only bot owner
+┃ ✦ can use this command
+╰━━━━━━━━━━━━━━━━━━╯`,
+
+            ...channelInfo
+
+        }, { quoted: message });
+
+        return;
+
+    }
+
+    // ======================
+    // REACTION
+    // ======================
+
+    await sock.sendMessage(chatId, {
+
+        react: {
+            text: '⚙️',
+            key: message.key
+        }
+
+    });
+
+    let data;
+
+    // ======================
+    // READ FILE
+    // ======================
+
+    try {
+
+        data = JSON.parse(
+
+            fs.readFileSync(
+                './data/messageCount.json'
+            )
+
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            'Error reading access mode:',
+            error
+        );
+
+        await sock.sendMessage(chatId, {
+
+            text:
+`╭━━━〔 ❌ Mode Error 〕━━━╮
+┃ ✦ Failed to read
+┃ ✦ bot mode status
+╰━━━━━━━━━━━━━━━━━━╯`,
+
+            ...channelInfo
+
+        });
+
+        return;
+
+    }
+
+    // ======================
+    // GET ACTION
+    // ======================
+
+    const action =
+    userMessage
+    .split(' ')[1]
+    ?.toLowerCase();
+
+    // ======================
+    // CURRENT MODE
+    // ======================
+
+    if (!action) {
+
+        const currentMode =
+
+            data.isPublic
+
+            ? 'Public 🌍'
+
+            : 'Private 🔒';
+
+        await sock.sendMessage(chatId, {
+
+            text:
+`╭━━━〔 ⚙️ BOT MODE 〕━━━╮
+┃ ✦ Current Mode:
+┃ ✦ ${currentMode}
+┃
+┃ 📌 Usage:
+┃ ✦ .mode public
+┃ ✦ .mode private
+┃
+┃ 🌍 Public  → Everyone
+┃ 🔒 Private → Owner Only
+╰━━━━━━━━━━━━━━━━━━╯`,
+
+            ...channelInfo
+
+        }, { quoted: message });
+
+        return;
+
+    }
+
+    // ======================
+    // INVALID MODE
+    // ======================
+
+    if (
+        action !== 'public' &&
+        action !== 'private'
+    ) {
+
+        await sock.sendMessage(chatId, {
+
+            text:
+`╭━━━〔 ⚠️ Invalid Mode 〕━━━╮
+┃ ✦ Use only:
+┃ ✦ public
+┃ ✦ private
+┃
+┃ 📌 Example:
+┃ ✦ .mode public
+┃ ✦ .mode private
+╰━━━━━━━━━━━━━━━━━━╯`,
+
+            ...channelInfo
+
+        }, { quoted: message });
+
+        return;
+
+    }
+
+    // ======================
+    // UPDATE MODE
+    // ======================
+
+    try {
+
+        data.isPublic =
+        action === 'public';
+
+        fs.writeFileSync(
+
+            './data/messageCount.json',
+
+            JSON.stringify(
+                data,
+                null,
+                2
+            )
+
+        );
+
+        // ======================
+        // SUCCESS MESSAGE
+        // ======================
+
+        await sock.sendMessage(chatId, {
+
+            text:
+`╭━━━〔 ✅ Mode Updated 〕━━━╮
+┃ ✦ Bot mode changed
+┃ ✦ successfully
+┃
+┃ ⚙️ New Mode:
+┃ ✦ ${action === 'public' ? 'Public 🌍' : 'Private 🔒'}
+╰━━━━━━━━━━━━━━━━━━╯`,
+
+            ...channelInfo
+
+        });
+
+        // ======================
+        // SUCCESS REACTION
+        // ======================
+
+        await sock.sendMessage(chatId, {
+
+            react: {
+                text: '✅',
+                key: message.key
+            }
+
+        });
+
+    }
+
+    catch (error) {
+
+        console.error(
+            'Error updating access mode:',
+            error
+        );
+
+        await sock.sendMessage(chatId, {
+
+            text:
+`╭━━━〔 ❌ Mode Error 〕━━━╮
+┃ ✦ Failed to update
+┃ ✦ bot access mode
+╰━━━━━━━━━━━━━━━━━━╯`,
+
+            ...channelInfo
+
+        });
+
+    }
+
+break;
             case userMessage.startsWith('.anticall'):
                 if (!message.key.fromMe && !senderIsOwnerOrSudo) {
                     await sock.sendMessage(chatId, { text: 'Only owner/sudo can use anticall.' }, { quoted: message });
