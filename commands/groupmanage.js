@@ -119,7 +119,7 @@ async function setGroupDescription(
 
     if (!desc) {
 
-        await sock.sendMessage(chatId, {
+        return await sock.sendMessage(chatId, {
 
             text:
 `╭━━━〔 📝 Set Group Description 〕━━━╮
@@ -132,11 +132,22 @@ async function setGroupDescription(
 
         }, { quoted: message });
 
-        return;
-
     }
 
     try {
+
+        // ======================
+        // REACTION
+        // ======================
+
+        await sock.sendMessage(chatId, {
+
+            react: {
+                text: '📝',
+                key: message.key
+            }
+
+        });
 
         // ======================
         // UPDATE DESCRIPTION
@@ -157,9 +168,35 @@ async function setGroupDescription(
 
         }, { quoted: message });
 
+        // ======================
+        // SUCCESS REACTION
+        // ======================
+
+        await sock.sendMessage(chatId, {
+
+            react: {
+                text: '✅',
+                key: message.key
+            }
+
+        });
+
     }
 
     catch (e) {
+
+        // ======================
+        // ERROR REACTION
+        // ======================
+
+        await sock.sendMessage(chatId, {
+
+            react: {
+                text: '❌',
+                key: message.key
+            }
+
+        });
 
         await sock.sendMessage(chatId, {
 
@@ -205,7 +242,7 @@ async function setGroupName(
 
     if (!name) {
 
-        await sock.sendMessage(chatId, {
+        return await sock.sendMessage(chatId, {
 
             text:
 `╭━━━〔 🏷️ Set Group Name 〕━━━╮
@@ -213,16 +250,27 @@ async function setGroupName(
 ┃ ✦ new group name
 ┃
 ┃ 📌 Example:
-┃ ✦ .setgname 𝐋ɪɴᴜх 𝐒ᴇʀ 🧃🕊️
+┃ ✦ .setgname Linux Ser
 ╰━━━━━━━━━━━━━━━━━━━━╯`
 
         }, { quoted: message });
 
-        return;
-
     }
 
     try {
+
+        // ======================
+        // REACTION
+        // ======================
+
+        await sock.sendMessage(chatId, {
+
+            react: {
+                text: '🏷️',
+                key: message.key
+            }
+
+        });
 
         // ======================
         // UPDATE GROUP NAME
@@ -243,9 +291,35 @@ async function setGroupName(
 
         }, { quoted: message });
 
+        // ======================
+        // SUCCESS REACTION
+        // ======================
+
+        await sock.sendMessage(chatId, {
+
+            react: {
+                text: '✅',
+                key: message.key
+            }
+
+        });
+
     }
 
     catch (e) {
+
+        // ======================
+        // ERROR REACTION
+        // ======================
+
+        await sock.sendMessage(chatId, {
+
+            react: {
+                text: '❌',
+                key: message.key
+            }
+
+        });
 
         await sock.sendMessage(chatId, {
 
@@ -300,7 +374,7 @@ async function setGroupPhoto(
 
     if (!imageMessage) {
 
-        await sock.sendMessage(chatId, {
+        return await sock.sendMessage(chatId, {
 
             text:
 `╭━━━〔 🖼️ Set Group Photo 〕━━━╮
@@ -313,11 +387,22 @@ async function setGroupPhoto(
 
         }, { quoted: message });
 
-        return;
-
     }
 
     try {
+
+        // ======================
+        // REACTION
+        // ======================
+
+        await sock.sendMessage(chatId, {
+
+            react: {
+                text: '🖼️',
+                key: message.key
+            }
+
+        });
 
         // ======================
         // TMP DIRECTORY
@@ -429,9 +514,35 @@ async function setGroupPhoto(
 
         }, { quoted: message });
 
+        // ======================
+        // SUCCESS REACTION
+        // ======================
+
+        await sock.sendMessage(chatId, {
+
+            react: {
+                text: '✅',
+                key: message.key
+            }
+
+        });
+
     }
 
     catch (e) {
+
+        // ======================
+        // ERROR REACTION
+        // ======================
+
+        await sock.sendMessage(chatId, {
+
+            react: {
+                text: '❌',
+                key: message.key
+            }
+
+        });
 
         await sock.sendMessage(chatId, {
 
