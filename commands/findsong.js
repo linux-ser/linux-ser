@@ -16,7 +16,7 @@ global.musicDetectCache =
 global.musicDetectCache || {};
 
 // ======================
-// MUSIC DETECTOR COMMAND
+// MUSIC DETECTOR
 // ======================
 
 async function musicDetectCommand(
@@ -42,17 +42,16 @@ async function musicDetectCommand(
         });
 
         // ======================
-        // GET QUOTED MESSAGE
+        // GET QUOTED
         // ======================
 
-        const quoted =
+        const context =
 
             message.message
             ?.extendedTextMessage
-            ?.contextInfo
-            ?.quotedMessage;
+            ?.contextInfo;
 
-        if (!quoted) {
+        if (!context?.quotedMessage) {
 
             return await sock.sendMessage(chatId, {
 
@@ -69,6 +68,9 @@ async function musicDetectCommand(
             }, { quoted: message });
 
         }
+
+        const quoted =
+        context.quotedMessage;
 
         // ======================
         // CHECK MEDIA
@@ -113,13 +115,11 @@ async function musicDetectCommand(
         // ======================
 
         const type =
-
-            quoted.audioMessage
-                ? 'audio'
-                : 'video';
+        quoted.audioMessage
+            ? 'audio'
+            : 'video';
 
         const stream =
-
         await downloadContentFromMessage(
             media,
             type
@@ -144,16 +144,16 @@ async function musicDetectCommand(
         // SAVE FILE
         // ======================
 
-        const fileName =
-`music_${Date.now()}.${type === 'audio' ? 'mp3' : 'mp4'}`;
+        const filePath =
+`./temp_${Date.now()}.${type === 'audio' ? 'mp3' : 'mp4'}`;
 
         fs.writeFileSync(
-            fileName,
+            filePath,
             buffer
         );
 
         // ======================
-        // FORM DATA
+        // UPLOAD TO AUDD.IO
         // ======================
 
         const form =
@@ -161,17 +161,23 @@ async function musicDetectCommand(
 
         form.append(
             'file',
-            fs.createReadStream(fileName)
+            fs.createReadStream(filePath)
         );
 
-        // ======================
-        // TRACE API
-        // ======================
+        form.append(
+            'return',
+            'spotify,apple_music'
+        );
+
+        form.append(
+            'api_token',
+            'test'
+        );
 
         const response =
         await axios.post(
 
-'https://api.trace.moe/search',
+'https://api.audd.io/',
 
             form,
 
@@ -183,160 +189,75 @@ async function musicDetectCommand(
         );
 
         // ======================
+        // DELETE TEMP FILE
+        // ======================
+
+        fs.unlinkSync(
+            filePath
+        );
+
+        // ======================
         // RESULT CHECK
         // ======================
 
         if (
-
-            !response.data ||
-            !response.data.result ||
-            !response.data.result.length
-
+            !response.data.result
         ) {
 
             throw new Error(
-                'No result'
+                'Song not found'
             );
 
         }
 
         const result =
-        response.data.result[0];
+        response.data.result;
 
         // ======================
-        // GET ANIME INFO
+        // DETAILS
         // ======================
 
-        let movieName =
-        'Unknown';
+        const title =
+        result.title || 'Unknown';
 
-        let releaseYear =
-        'Unknown';
+        const artist =
+        result.artist || 'Unknown';
 
-        let genres =
-        'Unknown';
+        const album =
+        result.album || 'Unknown';
 
-        let score =
-        'Unknown';
+        const release =
+        result.release_date || 'Unknown';
 
-        let status =
-        'Unknown';
-
-        let animeUrl =
+        const spotify =
+        result.spotify?.external_urls?.spotify ||
         'Unavailable';
 
-        try {
+        const apple =
+        result.apple_music?.url ||
+        'Unavailable';
 
-            const aniResponse =
-            await axios({
-
-                url:
-'https://graphql.anilist.co',
-
-                method:
-'POST',
-
-                headers: {
-
-                    'Content-Type':
-'application/json',
-
-                    'Accept':
-'application/json'
-
-                },
-
-                data: {
-
-                    query: `
-query ($id: Int) {
-Media(id: $id, type: ANIME) {
-title {
-romaji
-english
-native
-}
-startDate {
-year
-}
-siteUrl
-genres
-averageScore
-status
-}
-}
-`,
-
-                    variables: {
-                        id: result.anilist
-                    }
-
-                }
-
-            });
-
-            const mediaInfo =
-
-                aniResponse.data
-                ?.data
-                ?.Media;
-
-            movieName =
-
-                mediaInfo?.title?.english ||
-
-                mediaInfo?.title?.romaji ||
-
-                'Unknown';
-
-            releaseYear =
-            mediaInfo?.startDate?.year ||
-            'Unknown';
-
-            genres =
-            mediaInfo?.genres?.join(', ') ||
-            'Unknown';
-
-            score =
-            mediaInfo?.averageScore ||
-            'Unknown';
-
-            status =
-            mediaInfo?.status ||
-            'Unknown';
-
-            animeUrl =
-            mediaInfo?.siteUrl ||
-            'Unavailable';
-
-        }
-
-        catch (e) {
-
-            console.log(e);
-
-        }
+        const cover =
+        result.spotify?.album?.images?.[0]?.url ||
+        'https://i.imgur.com/KnOxv0C.jpeg';
 
         // ======================
-        // YOUTUBE SEARCH
+        // SEARCH YOUTUBE
         // ======================
 
-        const ytSearch =
-        await yts(movieName);
+        const ytResult =
+        await yts(
+
+`${title} ${artist}`
+
+        );
 
         const ytVideo =
-        ytSearch.videos[0];
+        ytResult.videos[0];
 
-        const youtubeUrl =
+        const youtube =
         ytVideo?.url ||
         'Unavailable';
-
-        // ======================
-        // SPOTIFY SEARCH
-        // ======================
-
-        const spotifyUrl =
-`https://open.spotify.com/search/${encodeURIComponent(movieName)}`;
 
         // ======================
         // SAVE CACHE
@@ -344,20 +265,11 @@ status
 
         global.musicDetectCache[sender] = {
 
-            title:
-            movieName,
-
-            youtube:
-            youtubeUrl,
-
-            image:
-            result.image,
-
-            artist:
-            movieName,
-
-            album:
-            movieName
+            title,
+            artist,
+            album,
+            cover,
+            youtube
 
         };
 
@@ -367,40 +279,31 @@ status
 
         const caption =
 
-`╭━━━〔 🎵 Music Detected 〕━━━╮
-┃ 🎶 Song / Anime:
-┃ ✦ ${movieName}
+`╭━━━〔 🎵 Song Detected 〕━━━╮
+┃ 🎶 Title:
+┃ ✦ ${title}
 ┃
-┃ 📅 Release Year:
-┃ ✦ ${releaseYear}
+┃ 👤 Artist:
+┃ ✦ ${artist}
 ┃
-┃ 🎭 Genres:
-┃ ✦ ${genres}
+┃ 💽 Album:
+┃ ✦ ${album}
 ┃
-┃ ⭐ Rating:
-┃ ✦ ${score}
-┃
-┃ 📊 Match:
-┃ ✦ ${(result.similarity * 100).toFixed(2)}%
-┃
-┃ 📌 Status:
-┃ ✦ ${status}
-┃
-┃ 🎬 Episode:
-┃ ✦ ${result.episode || 'Unknown'}
+┃ 📅 Release:
+┃ ✦ ${release}
 ┃
 ┃ ▶️ YouTube:
-┃ ✦ ${youtubeUrl}
+┃ ✦ ${youtube}
 ┃
 ┃ 🎧 Spotify:
-┃ ✦ ${spotifyUrl}
+┃ ✦ ${spotify}
 ┃
-┃ 🌐 Anime Info:
-┃ ✦ ${animeUrl}
+┃ 🍎 Apple Music:
+┃ ✦ ${apple}
 ╰━━━━━━━━━━━━━━━━━━╯
 
 ╭━━━〔 🎧 Download Audio? 〕━━━╮
-┃ ✦ Reply with:
+┃ ✦ Reply:
 ┃ ✦ yes
 ┃ ✦ no
 ╰━━━━━━━━━━━━━━━━━━╯
@@ -414,10 +317,9 @@ status
         await sock.sendMessage(chatId, {
 
             image: {
-                url: result.image
+                url: cover
             },
 
-            caption:
             caption
 
         }, { quoted: message });
@@ -437,9 +339,9 @@ status
 
     }
 
-    catch (error) {
+    catch (e) {
 
-        console.log(error);
+        console.log(e);
 
         await sock.sendMessage(chatId, {
 
@@ -453,12 +355,10 @@ status
         await sock.sendMessage(chatId, {
 
             text:
-`╭━━━〔 ❌ Music Detect Error 〕━━━╮
-┃ ✦ Failed to detect
-┃ ✦ music
-┃
-┃ ✦ Try another media
-╰━━━━━━━━━━━━━━━━━━━━╯`
+`╭━━━〔 ❌ Detection Failed 〕━━━╮
+┃ ✦ Song not found
+┃ ✦ or API failed
+╰━━━━━━━━━━━━━━━━━━╯`
 
         }, { quoted: message });
 
@@ -499,8 +399,7 @@ async function handleMusicReply(
 
                 text:
 `╭━━━〔 🎵 Audio Skipped 〕━━━╮
-┃ ✦ Audio download
-┃ ✦ cancelled
+┃ ✦ Download cancelled
 ╰━━━━━━━━━━━━━━━━━━╯`
 
             }, { quoted: message });
@@ -525,36 +424,22 @@ async function handleMusicReply(
             });
 
             // ======================
-            // AUDIO INFO MESSAGE
+            // INFO MESSAGE
             // ======================
 
             await sock.sendMessage(chatId, {
 
                 text:
-`╭━━━〔 🎧 Downloading Audio 〕━━━╮
-┃ 🎶 Title:
-┃ ✦ ${data.title}
-┃
-┃ 👤 Artist:
-┃ ✦ ${data.artist}
-┃
-┃ 💽 Album:
-┃ ✦ ${data.album}
-┃
-┃ 📁 File Name:
-┃ ✦ ${data.title}.mp3
-┃
-┃ 🖼 Cover:
-┃ ✦ Available
-┃
-┃ 📥 Status:
-┃ ✦ Downloading...
+`╭━━━〔 🎧 Downloading 〕━━━╮
+┃ 🎶 ${data.title}
+┃ 👤 ${data.artist}
+┃ 💽 ${data.album}
 ╰━━━━━━━━━━━━━━━━━━╯`
 
             }, { quoted: message });
 
             // ======================
-            // AUDIO STREAM
+            // GET AUDIO
             // ======================
 
             const audioStream =
@@ -592,7 +477,7 @@ async function handleMusicReply(
                         data.title,
 
                         body:
-`Artist: ${data.artist}`,
+`${data.artist}`,
 
                         mediaType:
                         1,
@@ -601,7 +486,7 @@ async function handleMusicReply(
                         0,
 
                         thumbnailUrl:
-                        data.image,
+                        data.cover,
 
                         renderLargerThumbnail:
                         true,
@@ -616,10 +501,6 @@ async function handleMusicReply(
             }, { quoted: message });
 
             delete global.musicDetectCache[sender];
-
-            // ======================
-            // SUCCESS REACTION
-            // ======================
 
             await sock.sendMessage(chatId, {
 
