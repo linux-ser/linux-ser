@@ -2,6 +2,13 @@ const fetch = require('node-fetch');
 
 async function handleTranslateCommand(sock, chatId, message, match) {
     try {
+        // Reaction
+        await sock.sendMessage(chatId, {
+            react: {
+                text: '🌐',
+                key: message.key
+            }
+        });
         // Show typing indicator
         await sock.presenceSubscribe(chatId);
         await sock.sendPresenceUpdate('composing', chatId);
@@ -132,9 +139,24 @@ async function handleTranslateCommand(sock, chatId, message, match) {
         }, {
             quoted: message
         });
+        // Success Reaction
+        await sock.sendMessage(chatId, {
+            react: {
+                text: '✅',
+                key: message.key
+            }
+        });
 
     } catch (error) {
         console.error('❌ Error in translate command:', error);
+        //Error Reaction
+        await sock.sendMessage(chatId, {
+            react: {
+                text: '❌',
+                key: message.key
+            }
+        });
+        
         await sock.sendMessage(chatId, {
             text: `╭───〔 🌐 ᴛʀᴀɴꜱʟᴀᴛᴏʀ 〕───╮\n` +
                   `│ ❌ ꜰᴀɪʟᴇᴅ ᴛᴏ ᴛʀᴀɴ<b>ꜱʟᴀᴛᴇ ᴛᴇxᴛ\n` +
