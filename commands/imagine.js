@@ -32,17 +32,40 @@ async function imagineCommand(
 
         if (!prompt) {
 
+            await sock.sendMessage(chatId, {
+
+                react: {
+                    text: '🎨',
+                    key: message.key
+                }
+
+            });
+
             return await sock.sendMessage(chatId, {
 
                 text:
-`🖼️ Please provide a prompt.
-
-Example:
-.imagine beautiful sunset`
+`╭━━━〔 🎨 Imagine AI 〕━━━╮
+┃ ✦ Please provide a prompt
+┃ ✦ Example:
+┃ ✦ .imagine beautiful sunset
+╰━━━━━━━━━━━━━━━━━━╯`
 
             }, { quoted: message });
 
         }
+
+        // ======================
+        // LOADING REACTION
+        // ======================
+
+        await sock.sendMessage(chatId, {
+
+            react: {
+                text: '🪄',
+                key: message.key
+            }
+
+        });
 
         // ======================
         // LOADING MESSAGE
@@ -51,7 +74,10 @@ Example:
         await sock.sendMessage(chatId, {
 
             text:
-'🎨 Generating image...'
+`╭━━━〔 🖼️ Generating 〕━━━╮
+┃ ✦ Creating your image...
+┃ ✦ Please wait a moment
+╰━━━━━━━━━━━━━━━━━━╯`
 
         }, { quoted: message });
 
@@ -87,10 +113,24 @@ Example:
             image: buffer,
 
             caption:
-`🎨 Prompt:
-${prompt}`
+`╭━━━〔 🎨 Imagine Result 〕━━━╮
+┃ ✦ Prompt: ${prompt}
+╰━━━━━━━━━━━━━━━━━━╯`
 
         }, { quoted: message });
+
+        // ======================
+        // SUCCESS REACTION
+        // ======================
+
+        await sock.sendMessage(chatId, {
+
+            react: {
+                text: '✅',
+                key: message.key
+            }
+
+        });
 
     } catch (err) {
 
@@ -99,10 +139,30 @@ ${prompt}`
             err
         );
 
+        // ======================
+        // ERROR REACTION
+        // ======================
+
+        await sock.sendMessage(chatId, {
+
+            react: {
+                text: '❌',
+                key: message.key
+            }
+
+        });
+
+        // ======================
+        // ERROR MESSAGE
+        // ======================
+
         await sock.sendMessage(chatId, {
 
             text:
-'❌ Failed to generate image.'
+`╭━━━〔 ❌ Imagine Error 〕━━━╮
+┃ ✦ Failed to generate image
+┃ ✦ Please try again later
+╰━━━━━━━━━━━━━━━━━━╯`
 
         }, { quoted: message });
 
