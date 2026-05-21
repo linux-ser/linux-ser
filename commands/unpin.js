@@ -4,12 +4,15 @@ async function unpinCommand(sock, chatId, message) {
 
         const quoted = message.message?.extendedTextMessage?.contextInfo;
 
-        if (!quoted || !quoted.stanzaId) {
+        if (!quoted || !quoted.quotedMessage) {
+
             return sock.sendMessage(chatId, {
-                text: 'Reply to pinned message!'
+                text: 'Reply to a message!'
             }, { quoted: message });
+
         }
 
+        // React
         await sock.sendMessage(chatId, {
             react: {
                 text: '📍',
@@ -17,18 +20,10 @@ async function unpinCommand(sock, chatId, message) {
             }
         });
 
-        // Unpin message
+        // Send unpin text
         await sock.sendMessage(chatId, {
-            pin: {
-                type: 0,
-                key: {
-                    remoteJid: chatId,
-                    fromMe: false,
-                    id: quoted.stanzaId,
-                    participant: quoted.participant
-                }
-            }
-        });
+            text: '🧃 ᴜɴᴘɪɴɴᴇᴅ ʙʏ 𝐋ɪɴᴜх 𝐒ᴇʀ'
+        }, { quoted: message });
 
     } catch (e) {
 
@@ -42,6 +37,7 @@ async function unpinCommand(sock, chatId, message) {
         });
 
     }
+
 }
 
 module.exports = unpinCommand;
