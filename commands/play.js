@@ -2,62 +2,221 @@ const yts = require('yt-search');
 const axios = require('axios');
 
 async function playCommand(sock, chatId, message) {
+
     try {
-        const text = message.message?.conversation || message.message?.extendedTextMessage?.text;
-        const searchQuery = text.split(' ').slice(1).join(' ').trim();
-        
+
+        const text =
+            message.message?.conversation ||
+            message.message?.extendedTextMessage?.text;
+
+        const searchQuery =
+            text.split(' ').slice(1).join(' ').trim();
+
+        // NO QUERY
         if (!searchQuery) {
-            return await sock.sendMessage(chatId, { 
-                text: "What song do you want to download?"
+
+            await sock.sendMessage(chatId, {
+                react: {
+                    text: "⚠️",
+                    key: message.key,
+                },
             });
+
+            return await sock.sendMessage(chatId, {
+                text:
+`╭━━━〔 🎵 Play Downloader 〕━━━╮
+┃ ✦ Please provide
+┃ ✦ a song name
+┃
+┃ 📌 Example:
+┃ ✦ .play faded
+┃ ✦ .play believer
+┃ ✦ .play alone
+╰━━━━━━━━━━━━━━━━━━╯`
+            }, { quoted: message });
         }
 
-        // Search for the song
-        const { videos } = await yts(searchQuery);
-        if (!videos || videos.length === 0) {
-            return await sock.sendMessage(chatId, { 
-                text: "No songs found!"
-            });
-        }
-
-        // Send loading message
+        // SEARCH REACTION
         await sock.sendMessage(chatId, {
-            text: "_Please wait your download is in progress_"
+            react: {
+                text: "🔎",
+                key: message.key,
+            },
         });
 
-        // Get the first video result
+        // SEARCH SONG
+        const { videos } = await yts(searchQuery);
+
+        if (!videos || videos.length === 0) {
+
+            await sock.sendMessage(chatId, {
+                react: {
+                    text: "❌",
+                    key: message.key,
+                },
+            });
+
+            return await sock.sendMessage(chatId, {
+                text:
+`╭━━━〔 ❌ Song Not Found 〕━━━╮
+┃ ✦ No matching songs found
+┃ ✦ Try another song name
+╰━━━━━━━━━━━━━━━━━━╯`
+            }, { quoted: message });
+        }
+
+        // FIRST RESULT
         const video = videos[0];
+
+        const title = video.title;
+        const artist = video.author.name;
+        const duration = video.timestamp;
+        const views = video.views;
+        const thumbnail = video.thumbnail;
         const urlYt = video.url;
 
-        // Fetch audio data from API
-        const response = await axios.get(`https://apis-keith.vercel.app/download/dlmp3?url=${urlYt}`);
+        // CUSTOM AUDIO METADATA
+        const customTitle = "♪ 𝐕ɪʙᴇ 𝐁ʏ 𝐋ꜱ";
+        const customArtist = "𝐋ɪɴᴜх 𝐒ᴇʀ 🧃🕊️";
+        const customAlbum = "𝐋ɪɴᴜх 𝐒ᴇʀ 🧃🕊️";
+
+        // CUSTOM COVER IMAGE
+        const customThumbnail =
+"https://i.imgur.com/yourimage.jpg";
+
+        // LOADING
+        await sock.sendMessage(chatId, {
+            react: {
+                text: "⬇️",
+                key: message.key,
+            },
+        });
+
+        // AUDIO API
+        const response = await axios.get(
+            `https://apis-keith.vercel.app/download/dlmp3?url=${urlYt}`
+        );
+
         const data = response.data;
 
-        if (!data || !data.status || !data.result || !data.result.downloadUrl) {
-            return await sock.sendMessage(chatId, { 
-                text: "Failed to fetch audio from the API. Please try again later."
-            });
+        if (
+            !data ||
+            !data.status ||
+            !data.result ||
+            !data.result.downloadUrl
+        ) {
+
+            return await sock.sendMessage(chatId, {
+                text:
+`╭━━━〔 ❌ Download Failed 〕━━━╮
+┃ ✦ Failed to fetch audio
+┃ ✦ Please try again later
+╰━━━━━━━━━━━━━━━━━━╯`
+            }, { quoted: message });
         }
 
         const audioUrl = data.result.downloadUrl;
-        const title = data.result.title;
 
-        // Send the audio
+        // REAL SONG DETAILS MESSAGE
         await sock.sendMessage(chatId, {
-            audio: { url: audioUrl },
-            mimetype: "audio/mpeg",
-            fileName: `${title}.mp3`
+            image: { url: thumbnail },
+            caption:
+`╭━━━〔 🎵 Audio Details 〕━━━╮
+┃ ✦ 🎧 Title:
+┃ ✦ ${title}
+┃
+┃ ✦ 🎤 Artist:
+┃ ✦ ${artist}
+┃
+┃ ✦ 💿 Album:
+┃ ✦ YouTube Music
+┃
+┃ ✦ ⏱ Duration:
+┃ ✦ ${duration}
+┃
+┃ ✦ 👁 Views:
+┃ ✦ ${views}
+╰━━━━━━━━━━━━━━━━━━╯`
         }, { quoted: message });
 
-    } catch (error) {
-        console.error('Error in song2 command:', error);
-        await sock.sendMessage(chatId, { 
-            text: "Download failed. Please try again later."
+        // SEND AUDIO
+        await sock.sendMessage(
+            chatId,
+            {
+                audio: { url: audioUrl },
+
+                mimetype: "audio/mp4",
+
+                ptt: false,
+
+                fileName: "linuxser.mp3",
+
+                contextInfo: {
+                    externalAdReply: {
+                        showAdAttribution: false,
+
+                        title: customTitle,
+
+                        body:
+`🎤 ${customArtist}`,
+
+                        mediaType: 1,
+
+                        thumbnailUrl: customThumbnail,
+
+                        renderLargerThumbnail: true,
+
+                        sourceUrl: urlYt,
+                    },
+                },
+
+                seconds: video.seconds || 180,
+
+                waveform: [
+                    100, 0, 100, 0, 100,
+                    0, 100, 0, 100
+                ],
+
+                title: customTitle,
+
+                jpegThumbnail: Buffer.from(
+                    await (
+                        await axios.get(customThumbnail, {
+                            responseType: "arraybuffer"
+                        })
+                    ).data
+                ),
+            },
+            { quoted: message }
+        );
+
+        // SUCCESS REACTION
+        await sock.sendMessage(chatId, {
+            react: {
+                text: "🎉",
+                key: message.key,
+            },
         });
+
+    } catch (error) {
+
+        console.error('PLAY ERROR:', error);
+
+        await sock.sendMessage(chatId, {
+            react: {
+                text: "❌",
+                key: message.key,
+            },
+        });
+
+        await sock.sendMessage(chatId, {
+            text:
+`╭━━━〔 ⚠️ System Error 〕━━━╮
+┃ ✦ Failed to process request
+┃ ✦ Please try again later
+╰━━━━━━━━━━━━━━━━━━╯`
+        }, { quoted: message });
     }
 }
 
-module.exports = playCommand; 
-
-/*Powered by KNIGHT-BOT*
-*Credits to Keith MD*`*/
+module.exports = playCommand;
