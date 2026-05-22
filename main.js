@@ -104,6 +104,7 @@ const wastedCommand = require('./commands/wasted');
 const shipCommand = require('./commands/ship');
 const loveCommand = require('./commands/love'); 
 const teddyCommand = require('./commands/teddy');
+const moonCommand = require('./commands/moon');
 const readmoreCommand = require('./commands/readmore');
 const { groupInfoCommand } = require('./commands/groupinfo');
 const resetlinkCommand = require('./commands/resetlink');
@@ -998,6 +999,10 @@ break;
                 break;
              case userMessage === '.teddy':
                  await teddyCommand(sock, chatId, message);
+                 commandExecuted = true;
+                 break;
+             case userMessage === '.moon':
+                 await moonCommand(sock, chatId, message);
                  commandExecuted = true;
                  break;
              case userMessage.startsWith('.readmore'):
