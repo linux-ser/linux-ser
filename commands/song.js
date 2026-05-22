@@ -192,47 +192,29 @@ async function songCommand(sock, chatId, message, args = []) {
 
 		await sock.sendMessage(chatId, {
 
-			audio: {
-				url: tempFile
-			},
+	audio: {
+		url: tempFile
+	},
 
-			mimetype:
-				'audio/mpeg',
+	mimetype: 'audio/mpeg',
 
-			fileName:
-`${safeTitle}.mp3`,
+	fileName:
+`${video.title
+	.replace(/[\\/:*?"<>|]/g, '')
+	.substring(0, 80)}.mp3`,
 
-			ptt: false,
+	ptt: false,
 
-			contextInfo: {
-				externalAdReply: {
+	title:
+		video.title,
 
-					showAdAttribution:
-						false,
+	performer:
+		video.author?.name ||
+		'Unknown Artist'
 
-					title:
-						video.title,
-
-					body:
-						video.author?.name ||
-						'Unknown Artist',
-
-					mediaType: 1,
-
-					renderLargerThumbnail:
-						true,
-
-					thumbnailUrl:
-						video.thumbnail,
-
-					sourceUrl:
-						video.url
-				}
-			}
-
-		}, {
-			quoted: message
-		});
+}, {
+	quoted: message
+});
 
 		// ================= DELETE =================
 
