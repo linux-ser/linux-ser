@@ -78,7 +78,7 @@ async function tomp3Command(sock, chatId, message) {
 
         }
 
-        // ================= REACT =================
+        // ================= REACTION =================
 
         await sock.sendMessage(chatId, {
             react: {
@@ -184,16 +184,13 @@ async function tomp3Command(sock, chatId, message) {
 
         }, outputPath);
 
-        // ================= FINAL BUFFER =================
-
-        const audioBuffer =
-            fs.readFileSync(outputPath);
-
         // ================= SEND AUDIO =================
 
         await sock.sendMessage(chatId, {
 
-            audio: audioBuffer,
+            audio: {
+                url: outputPath
+            },
 
             mimetype:
                 'audio/mpeg',
@@ -242,7 +239,7 @@ async function tomp3Command(sock, chatId, message) {
 
             } catch {}
 
-        }, 30000);
+        }, 120000);
 
     } catch (e) {
 
