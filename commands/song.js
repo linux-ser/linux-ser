@@ -147,130 +147,70 @@ async function songCommand(sock, chatId, message, args = []) {
             }
         });
 
-        // ================= API FALLBACK =================
+        // ================= DOWNLOAD AUDIO =================
 
-        let audioData;
+        const downloadApis = [
 
-        const apiMethods = [
+            `https://widipe.com/download/ytmp3?url=${encodeURIComponent(video.url)}`,
 
-            // API 1
-            {
-                name: 'ApiHub',
+            `https://api.vevioz.com/api/button/mp3/${video.url}`
 
-                method: async () => {
-
-                    const res = await axios.get(
-`https://api.agatz.xyz/api/ytmp3?url=${encodeURIComponent(video.url)}`,
-                        {
-                            timeout: 60000
-                        }
-                    );
-
-                    if (
-                        res.data &&
-                        res.data.data &&
-                        res.data.data.downloadUrl
-                    ) {
-
-                        return {
-                            download:
-                                res.data.data.downloadUrl
-                        };
-                    }
-
-                    throw new Error('ApiHub failed');
-                }
-            },
-
-            // API 2
-            {
-                name: 'BTCH',
-
-                method: async () => {
-
-                    const res = await axios.get(
-`https://api.btch.bz.id/api/download/ytmp3?url=${encodeURIComponent(video.url)}`,
-                        {
-                            timeout: 60000
-                        }
-                    );
-
-                    if (
-                        res.data &&
-                        res.data.result &&
-                        res.data.result.mp3
-                    ) {
-
-                        return {
-                            download:
-                                res.data.result.mp3
-                        };
-                    }
-
-                    throw new Error('BTCH failed');
-                }
-            },
-
-            // API 3
-            {
-                name: 'DarkYasiya',
-
-                method: async () => {
-
-                    const res = await axios.get(
-`https://dark-yasiya-api.onrender.com/download/ytmp3?url=${encodeURIComponent(video.url)}`,
-                        {
-                            timeout: 60000
-                        }
-                    );
-
-                    if (
-                        res.data &&
-                        res.data.result &&
-                        res.data.result.download
-                    ) {
-
-                        return {
-                            download:
-                                res.data.result.download
-                        };
-                    }
-
-                    throw new Error('DarkYasiya failed');
-                }
-            }
         ];
 
-        let success = false;
+        let audioUrl = null;
 
-        for (const apiMethod of apiMethods) {
+        for (const api of downloadApis) {
 
             try {
 
-                audioData =
-                    await apiMethod.method();
+                const res = await axios.get(api, {
+                    timeout: 60000,
+                    headers: {
+                        'User-Agent':
+                            'Mozilla/5.0'
+                    }
+                });
 
+                // WIDIPE
                 if (
-                    audioData &&
-                    audioData.download
+                    res.data &&
+                    res.data.result &&
+                    res.data.result.download
                 ) {
 
-                    success = true;
+                    audioUrl =
+                        res.data.result.download;
+
                     break;
                 }
 
-            } catch (err) {
+                // VEVIOZ HTML SCRAPE
+                if (typeof res.data === 'string') {
+
+                    const match =
+                        res.data.match(
+/https?:\/\/[^"]+\.mp3/g
+                        );
+
+                    if (match && match[0]) {
+
+                        audioUrl = match[0];
+                        break;
+                    }
+                }
+
+            } catch (e) {
 
                 console.log(
-`${apiMethod.name} failed:`,
-                    err.message
+                    'API failed:',
+                    e.message
                 );
             }
         }
 
         // ================= FAILED =================
 
-        if (!success) {
+        if (!audioUrl) {
 
             await sock.sendMessage(chatId, {
                 react: {
@@ -282,8 +222,8 @@ async function songCommand(sock, chatId, message, args = []) {
             return await sock.sendMessage(chatId, {
                 text:
 `╭━━━〔 ❌ Download Failed 〕━━━╮
-┃ ✦ Failed to download song
-┃ ✦ Please try again later
+┃ ✦ Unable to fetch audio
+┃ ✦ Try another song/link
 ╰━━━━━━━━━━━━━━━━━━╯`
             }, {
                 quoted: message
@@ -298,47 +238,33 @@ async function songCommand(sock, chatId, message, args = []) {
         const customArtist =
             '𝐋ɪɴᴜх 𝐒ᴇʀ 🧃🕊️';
 
-        // COVER PIC PATH
         const customThumbnail =
-'https://o.uguu.se/kYrlzKnK.jpg';
+'https://i.imgur.com/7vQZ6oA.jpeg';
 
         // ================= SEND AUDIO =================
 
         await sock.sendMessage(chatId, {
 
             audio: {
-                url: audioData.download
+                url: audioUrl
             },
 
             mimetype: 'audio/mpeg',
 
             ptt: false,
 
-            // FILE NAME
             fileName:
 `${realTitle}.mp3`,
 
-            // AUDIO TITLE
             title:
                 realTitle,
 
-            // AUDIO ARTIST
             performer:
-                customArtist,
-
-            // AUDIO ALBUM
-            caption:
                 customArtist,
 
             seconds:
                 video.seconds || 180,
 
-            waveform: [
-                100, 0, 100, 0,
-                100, 0, 100, 0
-            ],
-
-            // AUDIO COVER PIC
             jpegThumbnail:
                 Buffer.from(
                     await (
@@ -352,7 +278,6 @@ async function songCommand(sock, chatId, message, args = []) {
                     ).data
                 ),
 
-            // WHATSAPP MUSIC CARD
             contextInfo: {
                 externalAdReply: {
 
