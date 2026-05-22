@@ -189,7 +189,7 @@ async function slowedCommand(
 
                     .audioFilters([
 
-                        'atempo=0.90',
+                        'atempo=0.93',
 
                         'asetrate=44100*0.88',
 
