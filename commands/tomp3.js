@@ -180,40 +180,22 @@ async function tomp3Command(sock, chatId, message) {
 
         }, outputPath);
 
-        // ================= SEND MP3 =================
+        // ================= FINAL BUFFER =================
+
+        const audioBuffer =
+            fs.readFileSync(outputPath);
+
+        // ================= SEND DOCUMENT =================
 
         await sock.sendMessage(chatId, {
 
-            audio: {
-                url: outputPath
-            },
+            document: audioBuffer,
 
             mimetype:
                 'audio/mpeg',
 
             fileName:
-                'linuxser.mp3',
-
-            ptt: false,
-
-            contextInfo: {
-                externalAdReply: {
-
-                    title:
-                        '𝐋ɪɴᴜх 𝐒ᴇʀ 🧃🕊️',
-
-                    body:
-                        'MP3 Converter',
-
-                    thumbnailUrl:
-                        'https://o.uguu.se/kYrlzKnK.jpg',
-
-                    mediaType: 1,
-
-                    renderLargerThumbnail:
-                        true
-                }
-            }
+                'linuxser.mp3'
 
         }, {
             quoted: message
@@ -254,7 +236,7 @@ async function tomp3Command(sock, chatId, message) {
 
             } catch {}
 
-        }, 15000);
+        }, 30000);
 
     } catch (e) {
 
