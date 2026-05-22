@@ -2,32 +2,40 @@ const {
     downloadContentFromMessage
 } = require('@whiskeysockets/baileys');
 
-const ffmpeg = require('fluent-ffmpeg');
-
-const ffmpegPath =
-    require('ffmpeg-static');
-
-ffmpeg.setFfmpegPath(
-    ffmpegPath
-);
+const ffmpeg =
+    require('fluent-ffmpeg');
 
 const NodeID3 =
     require('node-id3');
 
-const fs = require('fs');
-const path = require('path');
+const fs =
+    require('fs');
 
-async function bassCommand(sock, chatId, message) {
+const path =
+    require('path');
+
+async function bassCommand(
+    sock,
+    chatId,
+    message
+) {
 
     try {
 
         const quoted =
-            message.message?.extendedTextMessage?.contextInfo;
+            message.message
+            ?.extendedTextMessage
+            ?.contextInfo;
 
-        if (!quoted || !quoted.quotedMessage) {
+        if (
+            !quoted ||
+            !quoted.quotedMessage
+        ) {
 
-            return await sock.sendMessage(chatId, {
-                text:
+            return await sock.sendMessage(
+                chatId,
+                {
+                    text:
 `╭━━━〔 🎵 Bass Boost 〕━━━╮
 ┃
 ┃ ✦ Reply to an audio/video
@@ -35,13 +43,16 @@ async function bassCommand(sock, chatId, message) {
 ┃ ✦ .bass
 ┃
 ╰━━━━━━━━━━━━━━━━━━╯`
-            }, {
-                quoted: message
-            });
+                },
+                {
+                    quoted: message
+                }
+            );
 
         }
 
-        const qmsg = quoted.quotedMessage;
+        const qmsg =
+            quoted.quotedMessage;
 
         let stream;
         let ext;
@@ -50,10 +61,11 @@ async function bassCommand(sock, chatId, message) {
 
         if (qmsg.audioMessage) {
 
-            stream = await downloadContentFromMessage(
-                qmsg.audioMessage,
-                'audio'
-            );
+            stream =
+                await downloadContentFromMessage(
+                    qmsg.audioMessage,
+                    'audio'
+                );
 
             ext = 'mp3';
 
@@ -61,12 +73,15 @@ async function bassCommand(sock, chatId, message) {
 
         // ================= VIDEO =================
 
-        else if (qmsg.videoMessage) {
+        else if (
+            qmsg.videoMessage
+        ) {
 
-            stream = await downloadContentFromMessage(
-                qmsg.videoMessage,
-                'video'
-            );
+            stream =
+                await downloadContentFromMessage(
+                    qmsg.videoMessage,
+                    'video'
+                );
 
             ext = 'mp4';
 
@@ -74,39 +89,50 @@ async function bassCommand(sock, chatId, message) {
 
         else {
 
-            return await sock.sendMessage(chatId, {
-                text:
+            return await sock.sendMessage(
+                chatId,
+                {
+                    text:
 `╭━━━〔 ❌ Invalid Media 〕━━━╮
 ┃
 ┃ ✦ Reply to:
 ┃ ✦ Audio or video only
 ┃
 ╰━━━━━━━━━━━━━━━━━━╯`
-            }, {
-                quoted: message
-            });
+                },
+                {
+                    quoted: message
+                }
+            );
 
         }
 
         // ================= REACT =================
 
-        await sock.sendMessage(chatId, {
-            react: {
-                text: '🎧',
-                key: message.key
+        await sock.sendMessage(
+            chatId,
+            {
+                react: {
+                    text: '🎧',
+                    key: message.key
+                }
             }
-        });
+        );
 
         // ================= BUFFER =================
 
-        let buffer = Buffer.from([]);
+        let buffer =
+            Buffer.from([]);
 
-        for await (const chunk of stream) {
+        for await (
+            const chunk of stream
+        ) {
 
-            buffer = Buffer.concat([
-                buffer,
-                chunk
-            ]);
+            buffer =
+                Buffer.concat([
+                    buffer,
+                    chunk
+                ]);
 
         }
 
@@ -118,11 +144,16 @@ async function bassCommand(sock, chatId, message) {
                 '../temp'
             );
 
-        if (!fs.existsSync(tempDir)) {
+        if (
+            !fs.existsSync(tempDir)
+        ) {
 
-            fs.mkdirSync(tempDir, {
-                recursive: true
-            });
+            fs.mkdirSync(
+                tempDir,
+                {
+                    recursive: true
+                }
+            );
 
         }
 
@@ -145,28 +176,43 @@ async function bassCommand(sock, chatId, message) {
 
         // ================= PROCESS =================
 
-        await new Promise((resolve, reject) => {
+        await new Promise(
+            (
+                resolve,
+                reject
+            ) => {
 
-            ffmpeg(inputPath)
+                ffmpeg(inputPath)
 
-                .audioFilters([
-                    'bass=g=20',
-                    'volume=1.5'
-                ])
+                    .audioFilters([
+                        'bass=g=20',
+                        'volume=1.5'
+                    ])
 
-                .audioCodec('libmp3lame')
+                    .audioCodec(
+                        'libmp3lame'
+                    )
 
-                .audioBitrate('192k')
+                    .audioBitrate(
+                        '192k'
+                    )
 
-                .format('mp3')
+                    .format('mp3')
 
-                .save(outputPath)
+                    .save(outputPath)
 
-                .on('end', resolve)
+                    .on(
+                        'end',
+                        resolve
+                    )
 
-                .on('error', reject);
+                    .on(
+                        'error',
+                        reject
+                    );
 
-        });
+            }
+        );
 
         // ================= METADATA =================
 
@@ -185,11 +231,14 @@ async function bassCommand(sock, chatId, message) {
                 '𝐋ɪɴᴜх 𝐒ᴇʀ',
 
             image: {
-                mime: 'image/jpeg',
+
+                mime:
+                    'image/jpeg',
 
                 type: {
                     id: 3,
-                    name: 'front cover'
+                    name:
+                        'front cover'
                 },
 
                 description:
@@ -202,46 +251,54 @@ async function bassCommand(sock, chatId, message) {
                             '../assets/bot_image.jpg'
                         )
                     )
+
             }
 
         }, outputPath);
 
         // ================= SEND AUDIO =================
 
-        await sock.sendMessage(chatId, {
+        await sock.sendMessage(
+            chatId,
+            {
 
-            audio: {
-                url: outputPath
-            },
+                audio: {
+                    url: outputPath
+                },
 
-            mimetype:
-                'audio/mpeg',
+                mimetype:
+                    'audio/mpeg',
 
-            ptt: false,
+                ptt: false,
 
-            fileName:
-                'linuxser.mp3',
+                fileName:
+                    '♪ 𝐕ɪʙᴇ 𝐁ʏ 𝐋ꜱ.mp3',
 
-            jpegThumbnail:
-                fs.readFileSync(
-                    path.join(
-                        __dirname,
-                        '../assets/bot_image.jpg'
+                jpegThumbnail:
+                    fs.readFileSync(
+                        path.join(
+                            __dirname,
+                            '../assets/bot_image.jpg'
+                        )
                     )
-                )
 
-        }, {
-            quoted: message
-        });
+            },
+            {
+                quoted: message
+            }
+        );
 
         // ================= SUCCESS =================
 
-        await sock.sendMessage(chatId, {
-            react: {
-                text: '✅',
-                key: message.key
+        await sock.sendMessage(
+            chatId,
+            {
+                react: {
+                    text: '✅',
+                    key: message.key
+                }
             }
-        });
+        );
 
         // ================= CLEANUP =================
 
@@ -250,21 +307,27 @@ async function bassCommand(sock, chatId, message) {
             try {
 
                 if (
-                    fs.existsSync(inputPath)
+                    fs.existsSync(
+                        inputPath
+                    )
                 ) {
 
                     fs.unlinkSync(
                         inputPath
                     );
+
                 }
 
                 if (
-                    fs.existsSync(outputPath)
+                    fs.existsSync(
+                        outputPath
+                    )
                 ) {
 
                     fs.unlinkSync(
                         outputPath
                     );
+
                 }
 
             } catch {}
@@ -278,24 +341,31 @@ async function bassCommand(sock, chatId, message) {
             err
         );
 
-        await sock.sendMessage(chatId, {
-            react: {
-                text: '❌',
-                key: message.key
+        await sock.sendMessage(
+            chatId,
+            {
+                react: {
+                    text: '❌',
+                    key: message.key
+                }
             }
-        });
+        );
 
-        await sock.sendMessage(chatId, {
-            text:
+        await sock.sendMessage(
+            chatId,
+            {
+                text:
 `╭━━━〔 ❌ Bass Failed 〕━━━╮
 ┃
 ┃ ✦ Failed to process audio
 ┃ ✦ Try another media
 ┃
 ╰━━━━━━━━━━━━━━━━━━╯`
-        }, {
-            quoted: message
-        });
+            },
+            {
+                quoted: message
+            }
+        );
 
     }
 
