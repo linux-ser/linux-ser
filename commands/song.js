@@ -265,20 +265,15 @@ async function songCommand(
 			caption:
 `╭━━━〔 🎧 Audio Details 〕━━━╮
 ┃
-┃ ✦ 🎵 Title:
-┃ ✦ ${video.title}
+┃ ✦ 🎵 Title: ${video.title}
 ┃
-┃ ✦ 🎤 Artist:
-┃ ✦ ${video.author.name}
+┃ ✦ 🎤 Artist: ${video.author.name}
 ┃
-┃ ✦ 💿 Album:
-┃ ✦ YouTube Music
+┃ ✦ 💿 Album: YouTube Music
 ┃
-┃ ✦ ⏱ Duration:
-┃ ✦ ${video.timestamp}
+┃ ✦ ⏱ Duration: ${video.timestamp}
 ┃
-┃ ✦ 📥 Status:
-┃ ✦ Downloading Audio...
+┃ ✦ 📥 Status: Downloading Audio...
 ┃
 ╰━━━━━━━━━━━━━━━━━━╯`
 
@@ -463,7 +458,7 @@ async function songCommand(
 			mimetype: 'audio/mpeg',
 
 			fileName:
-`♪ 𝐕ɪʙᴇ 𝐁ʏ 𝐋ꜱ.mp3`,
+`linuxser.mp3`,
 
 			ptt: false,
 
