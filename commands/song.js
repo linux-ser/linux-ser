@@ -37,7 +37,7 @@ async function songCommand(sock, chatId, message, args = []) {
 
         if (!text) {
 
-            return await sock.sendMessage(chatId, {
+            await sock.sendMessage(chatId, {
                 react: {
                     text: '⚠️',
                     key: message.key
@@ -47,13 +47,11 @@ async function songCommand(sock, chatId, message, args = []) {
             return await sock.sendMessage(chatId, {
                 text:
 `╭━━━〔 🎵 Song Downloader 〕━━━╮
-┃ ✦ Please provide
-┃ ✦ a song name or YouTube link
+┃ ✦ Please provide a song name
 ┃
 ┃ 📌 Example:
 ┃ ✦ .song faded
 ┃ ✦ .song believer
-┃ ✦ .song https://youtu.be/xxxx
 ╰━━━━━━━━━━━━━━━━━━╯`
             }, {
                 quoted: message
@@ -73,7 +71,7 @@ async function songCommand(sock, chatId, message, args = []) {
                 url: text,
                 title: 'YouTube Audio',
                 thumbnail:
-'https://o.uguu.se/kYrlzKnK.jpg',
+'https://i.imgur.com/7vQZ6oA.jpeg',
                 timestamp: 'Unknown',
                 seconds: 180,
                 author: {
@@ -95,7 +93,7 @@ async function songCommand(sock, chatId, message, args = []) {
 
             if (!search.videos.length) {
 
-                return await sock.sendMessage(chatId, {
+                await sock.sendMessage(chatId, {
                     react: {
                         text: '❌',
                         key: message.key
@@ -126,20 +124,15 @@ async function songCommand(sock, chatId, message, args = []) {
 
             caption:
 `╭━━━〔 🎵 Audio Details 〕━━━╮
-┃ ✦ 🎧 Title:
-┃ ✦ ${video.title}
+┃ ✦ 🎧 Title: ${video.title}
 ┃
-┃ ✦ 🎤 Artist:
-┃ ✦ ${video.author?.name || 'Unknown Artist'}
+┃ ✦ 🎤 Artist: ${video.author?.name || 'Unknown Artist'}
 ┃
-┃ ✦ 💿 Album:
-┃ ✦ YouTube Music
+┃ ✦ 💿 Album: YouTube Music
 ┃
-┃ ✦ ⏱ Duration:
-┃ ✦ ${video.timestamp}
+┃ ✦ ⏱ Duration: ${video.timestamp}
 ┃
-┃ ✦ 🔍 Status:
-┃ ✦ Downloading Audio...
+┃ ✦ 🔍 Status: Downloading Audio...
 ╰━━━━━━━━━━━━━━━━━━╯`
 
         }, {
@@ -162,17 +155,77 @@ async function songCommand(sock, chatId, message, args = []) {
 
             // API 1
             {
-                name: 'Widipe',
+                name: 'ApiHub',
 
                 method: async () => {
 
                     const res = await axios.get(
-`https://widipe.com/download/ytmp3?url=${encodeURIComponent(video.url)}`
+`https://api.agatz.xyz/api/ytmp3?url=${encodeURIComponent(video.url)}`,
+                        {
+                            timeout: 60000
+                        }
                     );
 
                     if (
                         res.data &&
-                        res.data.status &&
+                        res.data.data &&
+                        res.data.data.downloadUrl
+                    ) {
+
+                        return {
+                            download:
+                                res.data.data.downloadUrl
+                        };
+                    }
+
+                    throw new Error('ApiHub failed');
+                }
+            },
+
+            // API 2
+            {
+                name: 'BTCH',
+
+                method: async () => {
+
+                    const res = await axios.get(
+`https://api.btch.bz.id/api/download/ytmp3?url=${encodeURIComponent(video.url)}`,
+                        {
+                            timeout: 60000
+                        }
+                    );
+
+                    if (
+                        res.data &&
+                        res.data.result &&
+                        res.data.result.mp3
+                    ) {
+
+                        return {
+                            download:
+                                res.data.result.mp3
+                        };
+                    }
+
+                    throw new Error('BTCH failed');
+                }
+            },
+
+            // API 3
+            {
+                name: 'DarkYasiya',
+
+                method: async () => {
+
+                    const res = await axios.get(
+`https://dark-yasiya-api.onrender.com/download/ytmp3?url=${encodeURIComponent(video.url)}`,
+                        {
+                            timeout: 60000
+                        }
+                    );
+
+                    if (
+                        res.data &&
                         res.data.result &&
                         res.data.result.download
                     ) {
@@ -183,60 +236,7 @@ async function songCommand(sock, chatId, message, args = []) {
                         };
                     }
 
-                    throw new Error('Widipe failed');
-                }
-            },
-
-            // API 2
-            {
-                name: 'Nexoracle',
-
-                method: async () => {
-
-                    const res = await axios.get(
-`https://api.nexoracle.com/downloader/youtube/audio?url=${encodeURIComponent(video.url)}`
-                    );
-
-                    if (
-                        res.data &&
-                        res.data.result &&
-                        res.data.result.audio
-                    ) {
-
-                        return {
-                            download:
-                                res.data.result.audio
-                        };
-                    }
-
-                    throw new Error('Nexoracle failed');
-                }
-            },
-
-            // API 3
-            {
-                name: 'Lann',
-
-                method: async () => {
-
-                    const res = await axios.get(
-`https://api.lannn.me/api/download/ytmp3?url=${encodeURIComponent(video.url)}`
-                    );
-
-                    if (
-                        res.data &&
-                        res.data.status &&
-                        res.data.data &&
-                        res.data.data.download
-                    ) {
-
-                        return {
-                            download:
-                                res.data.data.download
-                        };
-                    }
-
-                    throw new Error('Lann failed');
+                    throw new Error('DarkYasiya failed');
                 }
             }
         ];
