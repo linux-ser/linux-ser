@@ -269,7 +269,7 @@ async function songCommand(
 ┃
 ┃ ✦ 🎤 Artist: ${video.author.name}
 ┃
-┃ ✦ 💿 Album: YouTube Music
+┃ ✦ 💿 Album: ${video.author?.name || 'Unknown Album'} 
 ┃
 ┃ ✦ ⏱ Duration: ${video.timestamp}
 ┃
