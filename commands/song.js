@@ -1,16 +1,17 @@
 const axios = require('axios');
 const yts = require('yt-search');
-const fs = require('fs');
-const path = require('path');
-const { toAudio } = require('../lib/converter');
 
 const AXIOS_DEFAULTS = {
 	timeout: 60000,
 	headers: {
-		'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-		'Accept': 'application/json, text/plain, */*'
+		'User-Agent':
+			'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+		'Accept':
+			'application/json, text/plain, */*'
 	}
 };
+
+// ================= RETRY FUNCTION =================
 
 async function tryRequest(getter, attempts = 3) {
 
@@ -55,8 +56,7 @@ async function getEliteProTechDownloadByUrl(youtubeUrl) {
 	) {
 
 		return {
-			download: res.data.downloadURL,
-			title: res.data.title
+			download: res.data.downloadURL
 		};
 	}
 
@@ -81,13 +81,7 @@ async function getYupraDownloadByUrl(youtubeUrl) {
 
 		return {
 			download:
-				res.data.data.download_url,
-
-			title:
-				res.data.data.title,
-
-			thumbnail:
-				res.data.data.thumbnail
+				res.data.data.download_url
 		};
 	}
 
@@ -109,13 +103,7 @@ async function getOkatsuDownloadByUrl(youtubeUrl) {
 
 		return {
 			download:
-				res.data.dl,
-
-			title:
-				res.data.title,
-
-			thumbnail:
-				res.data.thumb
+				res.data.dl
 		};
 	}
 
@@ -199,60 +187,42 @@ async function songCommand(
 
 		// ================= SEARCH =================
 
+		await sock.sendMessage(chatId, {
+			react: {
+				text: '🔍',
+				key: message.key
+			}
+		});
+
+		const search =
+			await yts(text);
+
 		if (
-			text.includes('youtube.com') ||
-			text.includes('youtu.be')
+			!search ||
+			!search.videos.length
 		) {
-
-			video = {
-				url: text,
-				title: 'YouTube Audio',
-				thumbnail:
-'https://i.imgur.com/7vQZ6oA.jpeg',
-				timestamp: 'Unknown',
-				author: {
-					name: 'Unknown Artist'
-				}
-			};
-
-		} else {
 
 			await sock.sendMessage(chatId, {
 				react: {
-					text: '🔍',
+					text: '❌',
 					key: message.key
 				}
 			});
 
-			const search = await yts(text);
-
-			if (
-				!search ||
-				!search.videos.length
-			) {
-
-				await sock.sendMessage(chatId, {
-					react: {
-						text: '❌',
-						key: message.key
-					}
-				});
-
-				return await sock.sendMessage(chatId, {
-					text:
+			return await sock.sendMessage(chatId, {
+				text:
 `╭━━━〔 ❌ Song Not Found 〕━━━╮
 ┃
 ┃ ✦ No matching songs found
 ┃ ✦ Try another keyword
 ┃
 ╰━━━━━━━━━━━━━━━━━━╯`
-				}, {
-					quoted: message
-				});
-			}
-
-			video = search.videos[0];
+			}, {
+				quoted: message
+			});
 		}
+
+		video = search.videos[0];
 
 		// ================= DETAILS =================
 
@@ -265,15 +235,20 @@ async function songCommand(
 			caption:
 `╭━━━〔 🎧 Audio Details 〕━━━╮
 ┃
-┃ ✦ 🎵 Title: ${video.title}
+┃ ✦ 🎵 Title:
+┃ ✦ ${video.title}
 ┃
-┃ ✦ 🎤 Artist: ${video.author.name}
+┃ ✦ 🎤 Artist:
+┃ ✦ ${video.author?.name || 'Unknown Artist'}
 ┃
-┃ ✦ 💿 Album: ${video.author?.name || 'Unknown Album'} 
+┃ ✦ 💿 Album:
+┃ ✦ ${video.author?.name || 'Unknown Album'}
 ┃
-┃ ✦ ⏱ Duration: ${video.timestamp}
+┃ ✦ ⏱ Duration:
+┃ ✦ ${video.timestamp}
 ┃
-┃ ✦ 📥 Status: Downloading Audio...
+┃ ✦ 📥 Status:
+┃ ✦ Downloading Audio...
 ┃
 ╰━━━━━━━━━━━━━━━━━━╯`
 
@@ -292,7 +267,6 @@ async function songCommand(
 
 		// ================= API FALLBACK =================
 
-		let audioData;
 		let audioBuffer;
 		let downloadSuccess = false;
 
@@ -327,46 +301,27 @@ async function songCommand(
 
 			try {
 
-				audioData =
+				const audioData =
 					await apiMethod.method();
 
 				const audioUrl =
-					audioData.download ||
-					audioData.dl ||
-					audioData.url;
+					audioData.download;
 
 				if (!audioUrl) {
 					continue;
 				}
 
 				const audioResponse =
-					await axios.get(audioUrl, {
-
-						responseType:
-							'arraybuffer',
-
-						timeout: 90000,
-
-						maxContentLength:
-							Infinity,
-
-						maxBodyLength:
-							Infinity,
-
-						decompress: true,
-
-						validateStatus:
-							s => s >= 200 && s < 400,
-
+					await axios({
+						method: 'GET',
+						url: audioUrl,
+						responseType: 'arraybuffer',
+						timeout: 120000,
 						headers: {
 							'User-Agent':
 								'Mozilla/5.0',
-
 							'Accept':
-								'*/*',
-
-							'Accept-Encoding':
-								'identity'
+								'*/*'
 						}
 					});
 
@@ -377,7 +332,7 @@ async function songCommand(
 
 				if (
 					audioBuffer &&
-					audioBuffer.length > 0
+					audioBuffer.length > 10000
 				) {
 
 					downloadSuccess = true;
@@ -407,66 +362,49 @@ async function songCommand(
 			);
 		}
 
-		// ================= FORMAT DETECTION =================
-
-		const firstBytes =
-			audioBuffer.slice(0, 12);
-
-		const asciiSignature =
-			firstBytes.toString(
-				'ascii',
-				4,
-				8
-			);
-
-		let fileExtension = 'mp3';
-
-		if (asciiSignature === 'ftyp') {
-
-			fileExtension = 'm4a';
-		}
-
-		// ================= CONVERT =================
-
-		let finalBuffer = audioBuffer;
-
-		if (fileExtension !== 'mp3') {
-
-			finalBuffer =
-				await toAudio(
-					audioBuffer,
-					fileExtension
-				);
-
-			if (
-				!finalBuffer ||
-				finalBuffer.length === 0
-			) {
-
-				throw new Error(
-					'Audio conversion failed'
-				);
-			}
-		}
-
 		// ================= SEND AUDIO =================
 
 		await sock.sendMessage(chatId, {
 
-			audio: finalBuffer,
+			audio: audioBuffer,
 
 			mimetype: 'audio/mpeg',
 
 			fileName:
-`linuxser.mp3`,
+`${video.title}.mp3`,
 
 			ptt: false,
 
 			title:
-				'♪ 𝐕ɪʙᴇ 𝐁ʏ 𝐋ꜱ',
+				video.title,
 
 			performer:
-				'𝐋ɪɴᴜх 𝐒ᴇʀ 🧃🕊️'
+				video.author?.name || 'Unknown Artist',
+
+			contextInfo: {
+				externalAdReply: {
+
+					showAdAttribution:
+						false,
+
+					title:
+						video.title,
+
+					body:
+						video.author?.name || 'Unknown Artist',
+
+					mediaType: 1,
+
+					renderLargerThumbnail:
+						true,
+
+					thumbnailUrl:
+						video.thumbnail,
+
+					sourceUrl:
+						video.url
+				}
+			}
 
 		}, {
 			quoted: message
@@ -480,65 +418,6 @@ async function songCommand(
 				key: message.key
 			}
 		});
-
-		// ================= CLEANUP =================
-
-		try {
-
-			const tempDir =
-				path.join(
-					__dirname,
-					'../temp'
-				);
-
-			if (
-				fs.existsSync(tempDir)
-			) {
-
-				const files =
-					fs.readdirSync(tempDir);
-
-				const now =
-					Date.now();
-
-				files.forEach(file => {
-
-					const filePath =
-						path.join(
-							tempDir,
-							file
-						);
-
-					try {
-
-						const stats =
-							fs.statSync(
-								filePath
-							);
-
-						if (
-							now -
-							stats.mtimeMs >
-							10000
-						) {
-
-							if (
-								file.endsWith('.mp3') ||
-								file.endsWith('.m4a') ||
-								/^\d+\.(mp3|m4a)$/.test(file)
-							) {
-
-								fs.unlinkSync(
-									filePath
-								);
-							}
-						}
-
-					} catch {}
-				});
-			}
-
-		} catch {}
 
 	} catch (err) {
 
@@ -556,47 +435,14 @@ async function songCommand(
 			}
 		});
 
-		let errorMessage =
+		await sock.sendMessage(chatId, {
+			text:
 `╭━━━〔 ❌ Download Failed 〕━━━╮
 ┃
 ┃ ✦ Failed to download song
 ┃ ✦ Please try again later
 ┃
-╰━━━━━━━━━━━━━━━━━━╯`;
-
-		if (
-			err.message &&
-			err.message.includes(
-				'blocked'
-			)
-		) {
-
-			errorMessage =
-`╭━━━〔 🚫 Download Blocked 〕━━━╮
-┃
-┃ ✦ Audio unavailable
-┃ ✦ Region restricted content
-┃
-╰━━━━━━━━━━━━━━━━━━╯`;
-
-		} else if (
-			err.message &&
-			err.message.includes(
-				'All download sources failed'
-			)
-		) {
-
-			errorMessage =
-`╭━━━〔 ❌ Server Failed 〕━━━╮
-┃
-┃ ✦ All download servers failed
-┃ ✦ Try again later
-┃
-╰━━━━━━━━━━━━━━━━━━╯`;
-		}
-
-		await sock.sendMessage(chatId, {
-			text: errorMessage
+╰━━━━━━━━━━━━━━━━━━╯`
 		}, {
 			quoted: message
 		});
