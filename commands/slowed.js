@@ -2,51 +2,86 @@ const {
     downloadContentFromMessage
 } = require('@whiskeysockets/baileys');
 
-const ffmpeg = require('fluent-ffmpeg');
-const NodeID3 = require('node-id3');
+const ffmpeg =
+    require('fluent-ffmpeg');
 
-const fs = require('fs');
-const path = require('path');
+const NodeID3 =
+    require('node-id3');
 
-async function slowedCommand(sock, chatId, message) {
+const fs =
+    require('fs');
+
+const path =
+    require('path');
+
+async function slowedCommand(
+    sock,
+    chatId,
+    message
+) {
 
     try {
 
         const quoted =
-            message.message?.extendedTextMessage?.contextInfo;
+            message.message
+            ?.extendedTextMessage
+            ?.contextInfo;
 
-        if (!quoted || !quoted.quotedMessage) {
+        if (
+            !quoted ||
+            !quoted.quotedMessage
+        ) {
 
-            return await sock.sendMessage(chatId, {
-                text: 'Reply to audio or video!'
-            }, { quoted: message });
+            return await sock.sendMessage(
+                chatId,
+                {
+                    text:
+`╭━━━〔 🎶 Slowed + Reverb 〕━━━╮
+┃
+┃ ✦ Reply to audio/video
+┃ ✦ Then use:
+┃ ✦ .slowed
+┃
+╰━━━━━━━━━━━━━━━━━━╯`
+                },
+                {
+                    quoted: message
+                }
+            );
 
         }
 
-        const qmsg = quoted.quotedMessage;
+        const qmsg =
+            quoted.quotedMessage;
 
         let stream;
         let type;
 
-        // Audio
+        // ================= AUDIO =================
+
         if (qmsg.audioMessage) {
 
-            stream = await downloadContentFromMessage(
-                qmsg.audioMessage,
-                'audio'
-            );
+            stream =
+                await downloadContentFromMessage(
+                    qmsg.audioMessage,
+                    'audio'
+                );
 
             type = 'mp3';
 
         }
 
-        // Video
-        else if (qmsg.videoMessage) {
+        // ================= VIDEO =================
 
-            stream = await downloadContentFromMessage(
-                qmsg.videoMessage,
-                'video'
-            );
+        else if (
+            qmsg.videoMessage
+        ) {
+
+            stream =
+                await downloadContentFromMessage(
+                    qmsg.videoMessage,
+                    'video'
+                );
 
             type = 'mp4';
 
@@ -54,46 +89,76 @@ async function slowedCommand(sock, chatId, message) {
 
         else {
 
-            return await sock.sendMessage(chatId, {
-                text: 'Reply to audio or video!'
-            }, { quoted: message });
+            return await sock.sendMessage(
+                chatId,
+                {
+                    text:
+`╭━━━〔 ❌ Invalid Media 〕━━━╮
+┃
+┃ ✦ Reply to:
+┃ ✦ Audio or video only
+┃
+╰━━━━━━━━━━━━━━━━━━╯`
+                },
+                {
+                    quoted: message
+                }
+            );
 
         }
 
-        // React
-        await sock.sendMessage(chatId, {
-            react: {
-                text: '🎶',
-                key: message.key
+        // ================= REACT =================
+
+        await sock.sendMessage(
+            chatId,
+            {
+                react: {
+                    text: '🎶',
+                    key: message.key
+                }
             }
-        });
+        );
 
-        // Buffer
-        let buffer = Buffer.from([]);
+        // ================= BUFFER =================
 
-        for await (const chunk of stream) {
+        let buffer =
+            Buffer.from([]);
 
-            buffer = Buffer.concat([
-                buffer,
-                chunk
-            ]);
+        for await (
+            const chunk of stream
+        ) {
+
+            buffer =
+                Buffer.concat([
+                    buffer,
+                    chunk
+                ]);
 
         }
 
-        // Temp folder
+        // ================= TEMP =================
+
         const tempDir =
-            path.join(__dirname, '../temp');
+            path.join(
+                __dirname,
+                '../temp'
+            );
 
-        if (!fs.existsSync(tempDir)) {
+        if (
+            !fs.existsSync(tempDir)
+        ) {
 
-            fs.mkdirSync(tempDir, {
-                recursive: true
-            });
+            fs.mkdirSync(
+                tempDir,
+                {
+                    recursive: true
+                }
+            );
 
         }
 
-        // Unique names
-        const timestamp = Date.now();
+        const timestamp =
+            Date.now();
 
         const inputPath =
             path.join(
@@ -107,42 +172,67 @@ async function slowedCommand(sock, chatId, message) {
                 `output_${timestamp}.mp3`
             );
 
-        // Save input
-        fs.writeFileSync(inputPath, buffer);
+        fs.writeFileSync(
+            inputPath,
+            buffer
+        );
 
-        // Slowed + Reverb
-        await new Promise((resolve, reject) => {
+        // ================= PROCESS =================
 
-            ffmpeg(inputPath)
+        await new Promise(
+            (
+                resolve,
+                reject
+            ) => {
 
-                .audioFilters([
+                ffmpeg(inputPath)
 
-                    'atempo=0.90',
+                    .audioFilters([
 
-                    'asetrate=44100*0.88',
+                        'atempo=0.90',
 
-                    'aresample=44100',
+                        'asetrate=44100*0.88',
 
-                    'aecho=0.8:0.88:60:0.4',
+                        'aresample=44100',
 
-                    'bass=g=6:f=110:w=0.6',
+                        'aecho=0.8:0.88:60:0.4',
 
-                    'volume=1.15'
+                        'bass=g=6:f=110:w=0.6',
 
-                ])
+                        'volume=1.15'
 
-                .audioCodec('libmp3lame')
-                .audioBitrate(128)
-                .format('mp3')
-                .save(outputPath)
+                    ])
 
-                .on('end', resolve)
-                .on('error', reject);
+                    .audioCodec(
+                        'libmp3lame'
+                    )
 
-        });
+                    .audioBitrate(
+                        '128k'
+                    )
 
-        // Check output
-        if (!fs.existsSync(outputPath)) {
+                    .format('mp3')
+
+                    .save(outputPath)
+
+                    .on(
+                        'end',
+                        resolve
+                    )
+
+                    .on(
+                        'error',
+                        reject
+                    );
+
+            }
+        );
+
+        // ================= CHECK =================
+
+        if (
+            !fs.existsSync(outputPath)
+        ) {
 
             throw new Error(
                 'Audio conversion failed'
@@ -150,98 +240,178 @@ async function slowedCommand(sock, chatId, message) {
 
         }
 
-        // Add metadata + cover
+        // ================= METADATA =================
+
         NodeID3.write({
 
             title:
-            '♫ 𝐒ʟᴏᴡᴇᴅ + 𝐑ᴇᴠᴇʀʙ',
+                '♫ 𝐒ʟᴏᴡᴇᴅ + 𝐑ᴇᴠᴇʀʙ',
 
             artist:
-            '𝐋ɪɴᴜх 𝐒ᴇʀ',
+                '𝐋ɪɴᴜх 𝐒ᴇʀ',
 
             album:
-            '🎶 𝐕ɪʙᴇꜱ',
+                '🎶 𝐕ɪʙᴇꜱ',
 
             performerInfo:
-            '𝐋ɪɴᴜх 𝐒ᴇʀ',
+                '𝐋ɪɴᴜх 𝐒ᴇʀ',
 
             image: {
-                mime: 'image/jpeg',
+
+                mime:
+                    'image/jpeg',
 
                 type: {
                     id: 3,
-                    name: 'front cover'
+                    name:
+                        'front cover'
                 },
 
-                description: 'Cover',
+                description:
+                    'Cover',
 
-                imageBuffer: fs.readFileSync(
-                    path.join(
-                        __dirname,
-                        '../assets/bot_image.jpg'
+                imageBuffer:
+                    fs.readFileSync(
+                        path.join(
+                            __dirname,
+                            '../assets/bot_image.jpg'
+                        )
                     )
-                )
+
             }
 
         }, outputPath);
 
-        // Send audio
-        await sock.sendMessage(chatId, {
+        // ================= SEND AUDIO =================
 
-            audio: {
-                url: outputPath
+        await sock.sendMessage(
+            chatId,
+            {
+
+                audio:
+                    fs.readFileSync(
+                        outputPath
+                    ),
+
+                mimetype:
+                    'audio/mpeg',
+
+                ptt: false,
+
+                fileName:
+                    'linuxser.mp3',
+
+                jpegThumbnail:
+                    fs.readFileSync(
+                        path.join(
+                            __dirname,
+                            '../assets/bot_image.jpg'
+                        )
+                    ),
+
+                contextInfo: {
+
+                    externalAdReply: {
+
+                        title:
+                            '♫ 𝐒ʟᴏᴡᴇᴅ + 𝐑ᴇᴠᴇʀʙ',
+
+                        body:
+                            '🎶 Smooth Music Effect',
+
+                        thumbnailUrl:
+                            'https://o.uguu.se/kYrlzKnK.jpg',
+
+                        mediaType: 1,
+
+                        renderLargerThumbnail:
+                            true
+
+                    }
+
+                }
+
             },
+            {
+                quoted: message
+            }
+        );
 
-            mimetype: 'audio/mpeg',
+        // ================= SUCCESS =================
 
-            ptt: false,
-
-            fileName:
-            'linuxser.mp3',
-
-            contextInfo: {
-                externalAdReply: {
-
-                    title:
-                    '♫ 𝐒ʟᴏᴡᴇᴅ + 𝐑ᴇᴠᴇʀʙ',
-
-                    body:
-                    '🎶 Smooth Music Effect',
-
-                    thumbnailUrl:
-                    'https://o.uguu.se/kYrlzKnK.jpg',
-
-                    mediaType: 1,
-
-                    renderLargerThumbnail: true
+        await sock.sendMessage(
+            chatId,
+            {
+                react: {
+                    text: '✅',
+                    key: message.key
                 }
             }
+        );
 
-        }, { quoted: message });
+        // ================= CLEANUP =================
 
-        // Cleanup
-        fs.unlinkSync(inputPath);
-        fs.unlinkSync(outputPath);
+        setTimeout(() => {
 
-        // Success react
-        await sock.sendMessage(chatId, {
-            react: {
-                text: '✅',
-                key: message.key
+            try {
+
+                if (
+                    fs.existsSync(
+                        inputPath
+                    )
+                ) {
+
+                    fs.unlinkSync(
+                        inputPath
+                    );
+
+                }
+
+                if (
+                    fs.existsSync(
+                        outputPath
+                    )
+                ) {
+
+                    fs.unlinkSync(
+                        outputPath
+                    );
+
+                }
+
+            } catch (e) {
+
+                console.log(e);
+
             }
-        });
+
+        }, 120000);
 
     } catch (e) {
 
-        console.log('SLOWED ERROR:', e);
+        console.log(
+            'SLOWED ERROR:',
+            e
+        );
 
-        await sock.sendMessage(chatId, {
-            text:
-            `❌ Error:\n${e.message}`
-        }, { quoted: message });
+        await sock.sendMessage(
+            chatId,
+            {
+                text:
+`╭━━━〔 ❌ Error 〕━━━╮
+┃
+┃ ✦ ${e.message}
+┃
+╰━━━━━━━━━━━━━━━━━━╯`
+            },
+            {
+                quoted: message
+            }
+        );
 
     }
 
 }
 
-module.exports = slowedCommand;
+module.exports =
+    slowedCommand;
