@@ -1,6 +1,7 @@
 const ytdl = require("@distube/ytdl-core");
 
 module.exports = async function ytCommand(sock, chatId, message) {
+
     try {
 
         const text =
@@ -11,34 +12,86 @@ module.exports = async function ytCommand(sock, chatId, message) {
         const args = text.split(" ");
         const url = args[1];
 
+        // NO URL
         if (!url) {
-            return await sock.sendMessage(chatId, {
-                text:
-`╭━━━〔 YOUTUBE DOWNLOADER 〕━━━⬣
+
+            await sock.sendMessage(chatId, {
+                react: {
+                    text: "⚠️",
+                    key: message.key,
+                },
+            });
+
+            return await sock.sendMessage(
+                chatId,
+                {
+                    text:
+`╭━━━〔 ⚠️ Missing Link 〕━━━╮
+┃ ✦ Please provide
+┃ ✦ a YouTube link
 ┃
-┃ ❌ Please provide a
-┃ valid YouTube link.
-┃
-┃ Example:
-┃ .yt https://youtu.be/xxxx
-┃
-╰━━━━━━━━━━━━━━⬣`
-            }, { quoted: message });
+┃ 📌 Example:
+┃ ✦ .yt https://youtu.be/xxxx
+╰━━━━━━━━━━━━━━━━━━╯`
+                },
+                { quoted: message }
+            );
         }
 
+        // INVALID URL
         if (!ytdl.validateURL(url)) {
-            return await sock.sendMessage(chatId, {
-                text:
-`╭━━━〔 INVALID URL 〕━━━⬣
-┃
-┃ ❌ Unsupported or invalid
-┃ YouTube URL detected.
-┃
-╰━━━━━━━━━━━━━━⬣`
-            }, { quoted: message });
+
+            await sock.sendMessage(chatId, {
+                react: {
+                    text: "❌",
+                    key: message.key,
+                },
+            });
+
+            return await sock.sendMessage(
+                chatId,
+                {
+                    text:
+`╭━━━〔 🚫 Invalid URL 〕━━━╮
+┃ ✦ Unsupported YouTube link
+┃ ✦ Please check the URL
+╰━━━━━━━━━━━━━━━━━━╯`
+                },
+                { quoted: message }
+            );
         }
 
-        const info = await ytdl.getInfo(url);
+        // GET VIDEO INFO
+        let info;
+
+        try {
+
+            info = await ytdl.getInfo(url);
+
+        } catch (err) {
+
+            console.log("GET INFO ERROR:", err);
+
+            await sock.sendMessage(chatId, {
+                react: {
+                    text: "❌",
+                    key: message.key,
+                },
+            });
+
+            return await sock.sendMessage(
+                chatId,
+                {
+                    text:
+`╭━━━〔 ⚠️ Video Unavailable 〕━━━╮
+┃ ✦ Failed to fetch video
+┃ ✦ Private or restricted video
+┃ ✦ Region blocked content
+╰━━━━━━━━━━━━━━━━━━╯`
+                },
+                { quoted: message }
+            );
+        }
 
         const title = info.videoDetails.title;
         const author = info.videoDetails.author.name;
@@ -50,27 +103,25 @@ module.exports = async function ytCommand(sock, chatId, message) {
                 info.videoDetails.thumbnails.length - 1
             ].url;
 
+        // MAIN MENU
         const caption =
-`╭━━━〔 YOUTUBE DOWNLOADER 〕━━━⬣
+`╭━━━〔 🎥 YouTube Downloader 〕━━━╮
+┃ ✦ 🎬 Title:
+┃ ✦ ${title}
 ┃
-┃ 🎬 Title:
-┃ ${title}
+┃ ✦ 👤 Channel:
+┃ ✦ ${author}
 ┃
-┃ 👤 Channel:
-┃ ${author}
+┃ ✦ 👁 Views:
+┃ ✦ ${views}
 ┃
-┃ 👁 Views:
-┃ ${views}
+┃ ✦ ⏱ Duration:
+┃ ✦ ${Math.floor(duration / 60)} Minutes
 ┃
-┃ ⏱ Duration:
-┃ ${Math.floor(duration / 60)} Minutes
-┃
-┣━━━〔 DOWNLOAD OPTIONS 〕━━━⬣
-┃
-┃ 1️⃣ Reply with *1* for Audio
-┃ 2️⃣ Reply with *2* for Video
-┃
-╰━━━━━━━━━━━━━━━━━━⬣`;
+┣━━━〔 📥 Download Options 〕━━━┫
+┃ ✦ Reply *1* for Audio
+┃ ✦ Reply *2* for Video
+╰━━━━━━━━━━━━━━━━━━╯`;
 
         const sentMsg = await sock.sendMessage(
             chatId,
@@ -81,7 +132,9 @@ module.exports = async function ytCommand(sock, chatId, message) {
             { quoted: message }
         );
 
+        // REPLY LISTENER
         const listener = async (update) => {
+
             try {
 
                 const m = update.messages[0];
@@ -104,7 +157,7 @@ module.exports = async function ytCommand(sock, chatId, message) {
 
                     await sock.sendMessage(chatId, {
                         react: {
-                            text: "⏳",
+                            text: "⬇️",
                             key: m.key,
                         },
                     });
@@ -134,20 +187,19 @@ module.exports = async function ytCommand(sock, chatId, message) {
                         chatId,
                         {
                             text:
-`╭━━━〔 AUDIO DOWNLOADED 〕━━━⬣
+`╭━━━〔 🎵 Audio Downloaded 〕━━━╮
+┃ ✦ 🎧 ${title}
 ┃
-┃ 🎵 ${title}
-┃
-┃ ✅ Download Completed
-┃
-╰━━━━━━━━━━━━━━━━━━⬣`
+┃ ✦ ✅ Download Completed
+┃ ✦ 📥 Audio Sent Successfully
+╰━━━━━━━━━━━━━━━━━━╯`
                         },
                         { quoted: m }
                     );
 
                     await sock.sendMessage(chatId, {
                         react: {
-                            text: "✅",
+                            text: "🎉",
                             key: m.key,
                         },
                     });
@@ -160,7 +212,7 @@ module.exports = async function ytCommand(sock, chatId, message) {
 
                     await sock.sendMessage(chatId, {
                         react: {
-                            text: "⏳",
+                            text: "⬇️",
                             key: m.key,
                         },
                     });
@@ -179,20 +231,19 @@ module.exports = async function ytCommand(sock, chatId, message) {
                             mimetype: "video/mp4",
                             fileName: `${title}.mp4`,
                             caption:
-`╭━━━〔 VIDEO DOWNLOADED 〕━━━⬣
+`╭━━━〔 🎬 Video Downloaded 〕━━━╮
+┃ ✦ 📹 ${title}
 ┃
-┃ 🎬 ${title}
-┃
-┃ ✅ Download Completed
-┃
-╰━━━━━━━━━━━━━━━━━━⬣`
+┃ ✦ ✅ Download Completed
+┃ ✦ 📥 Video Sent Successfully
+╰━━━━━━━━━━━━━━━━━━╯`
                         },
                         { quoted: m }
                     );
 
                     await sock.sendMessage(chatId, {
                         react: {
-                            text: "✅",
+                            text: "🎉",
                             key: m.key,
                         },
                     });
@@ -202,17 +253,26 @@ module.exports = async function ytCommand(sock, chatId, message) {
 
             } catch (err) {
 
-                console.log(err);
+                console.log("DOWNLOAD ERROR:", err);
 
                 await sock.sendMessage(chatId, {
-                    text:
-`╭━━━〔 ERROR 〕━━━⬣
-┃
-┃ ❌ Download failed.
-┃ Please try again later.
-┃
-╰━━━━━━━━━━━━━━⬣`
-                }, { quoted: message });
+                    react: {
+                        text: "❌",
+                        key: message.key,
+                    },
+                });
+
+                await sock.sendMessage(
+                    chatId,
+                    {
+                        text:
+`╭━━━〔 ❌ Download Failed 〕━━━╮
+┃ ✦ Unable to download media
+┃ ✦ Please try again later
+╰━━━━━━━━━━━━━━━━━━╯`
+                    },
+                    { quoted: message }
+                );
             }
         };
 
@@ -220,16 +280,25 @@ module.exports = async function ytCommand(sock, chatId, message) {
 
     } catch (error) {
 
-        console.log(error);
+        console.log("YT MAIN ERROR:", error);
 
         await sock.sendMessage(chatId, {
-            text:
-`╭━━━〔 DOWNLOAD FAILED 〕━━━⬣
-┃
-┃ ❌ Unable to process
-┃ the YouTube link.
-┃
-╰━━━━━━━━━━━━━━⬣`
-        }, { quoted: message });
+            react: {
+                text: "❌",
+                key: message.key,
+            },
+        });
+
+        await sock.sendMessage(
+            chatId,
+            {
+                text:
+`╭━━━〔 ⚠️ System Error 〕━━━╮
+┃ ✦ Failed to process request
+┃ ✦ Internal server problem
+╰━━━━━━━━━━━━━━━━━━╯`
+            },
+            { quoted: message }
+        );
     }
 };
