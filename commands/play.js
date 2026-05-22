@@ -44,13 +44,11 @@ async function playCommand(
             return await sock.sendMessage(chatId, {
                 text:
 `╭━━━〔 🎵 Play Downloader 〕━━━╮
-┃ ✦ Please provide
-┃ ✦ a song name or link
+┃ ✦ Please provide a song name
 ┃
 ┃ 📌 Example:
 ┃ ✦ .play faded
 ┃ ✦ .play believer
-┃ ✦ .play https://youtu.be/xxxx
 ╰━━━━━━━━━━━━━━━━━━╯`
             }, {
                 quoted: message
