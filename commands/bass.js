@@ -3,200 +3,275 @@ const {
 } = require('@whiskeysockets/baileys');
 
 const ffmpeg = require('fluent-ffmpeg');
-const NodeID3 = require('node-id3');
-
 const fs = require('fs');
 const path = require('path');
 
-async function bassCommand(sock, chatId, message) {
+module.exports = {
 
-    try {
+    name: 'bass',
+    aliases: ['bassboost'],
 
-        const quoted =
-            message.message?.extendedTextMessage?.contextInfo;
+    async execute(sock, chatId, message) {
 
-        if (!quoted || !quoted.quotedMessage) {
+        try {
 
-            return await sock.sendMessage(chatId, {
-                text: 'Reply to audio or video!'
-            }, { quoted: message });
+            const quoted =
+                message.message?.extendedTextMessage?.contextInfo;
 
-        }
+            if (!quoted || !quoted.quotedMessage) {
 
-        const qmsg = quoted.quotedMessage;
+                return await sock.sendMessage(chatId, {
+                    text:
+`╭━━━〔 🎵 Bass Boost 〕━━━╮
+┃
+┃ ✦ Reply to an audio/video
+┃ ✦ Then use:
+┃ ✦ .bass
+┃
+╰━━━━━━━━━━━━━━━━━━╯`
+                }, {
+                    quoted: message
+                });
 
-        let stream;
-        let type;
-
-        // Audio
-        if (qmsg.audioMessage) {
-
-            stream = await downloadContentFromMessage(
-                qmsg.audioMessage,
-                'audio'
-            );
-
-            type = 'mp3';
-
-        }
-
-        // Video
-        else if (qmsg.videoMessage) {
-
-            stream = await downloadContentFromMessage(
-                qmsg.videoMessage,
-                'video'
-            );
-
-            type = 'mp4';
-
-        }
-
-        else {
-
-            return await sock.sendMessage(chatId, {
-                text: 'Reply to audio or video!'
-            }, { quoted: message });
-
-        }
-
-        // React
-        await sock.sendMessage(chatId, {
-            react: {
-                text: '🎧',
-                key: message.key
             }
-        });
 
-        // Buffer
-        let buffer = Buffer.from([]);
+            const qmsg = quoted.quotedMessage;
 
-        for await (const chunk of stream) {
+            let stream;
+            let ext;
 
-            buffer = Buffer.concat([
-                buffer,
-                chunk
-            ]);
+            // ================= AUDIO =================
 
-        }
+            if (qmsg.audioMessage) {
 
-        // Temp folder
-        const tempDir =
-            path.join(__dirname, '../temp');
+                stream = await downloadContentFromMessage(
+                    qmsg.audioMessage,
+                    'audio'
+                );
 
-        if (!fs.existsSync(tempDir)) {
+                ext = 'mp3';
 
-            fs.mkdirSync(tempDir, {
-                recursive: true
+            }
+
+            // ================= VIDEO =================
+
+            else if (qmsg.videoMessage) {
+
+                stream = await downloadContentFromMessage(
+                    qmsg.videoMessage,
+                    'video'
+                );
+
+                ext = 'mp4';
+
+            }
+
+            else {
+
+                return await sock.sendMessage(chatId, {
+                    text:
+`╭━━━〔 ❌ Invalid Media 〕━━━╮
+┃
+┃ ✦ Reply to:
+┃ ✦ Audio or video only
+┃
+╰━━━━━━━━━━━━━━━━━━╯`
+                }, {
+                    quoted: message
+                });
+
+            }
+
+            // ================= REACT =================
+
+            await sock.sendMessage(chatId, {
+                react: {
+                    text: '🎧',
+                    key: message.key
+                }
+            });
+
+            // ================= BUFFER =================
+
+            let buffer = Buffer.from([]);
+
+            for await (const chunk of stream) {
+
+                buffer = Buffer.concat([
+                    buffer,
+                    chunk
+                ]);
+
+            }
+
+            // ================= TEMP =================
+
+            const tempDir =
+                path.join(
+                    __dirname,
+                    '../temp'
+                );
+
+            if (!fs.existsSync(tempDir)) {
+
+                fs.mkdirSync(tempDir, {
+                    recursive: true
+                });
+
+            }
+
+            const inputPath =
+                path.join(
+                    tempDir,
+                    `${Date.now()}.${ext}`
+                );
+
+            const outputPath =
+                path.join(
+                    tempDir,
+                    `${Date.now()}_bass.mp3`
+                );
+
+            fs.writeFileSync(
+                inputPath,
+                buffer
+            );
+
+            // ================= PROCESS =================
+
+            await new Promise((resolve, reject) => {
+
+                ffmpeg(inputPath)
+
+                    .audioFilters([
+                        'bass=g=20',
+                        'volume=1.5'
+                    ])
+
+                    .audioCodec('libmp3lame')
+
+                    .audioBitrate('192k')
+
+                    .format('mp3')
+
+                    .save(outputPath)
+
+                    .on('end', resolve)
+
+                    .on('error', reject);
+
+            });
+
+            // ================= SEND AUDIO =================
+
+            await sock.sendMessage(chatId, {
+
+                audio: {
+                    url: outputPath
+                },
+
+                mimetype:
+                    'audio/mpeg',
+
+                ptt: false,
+
+                fileName:
+                    'linuxser-bass.mp3',
+
+                jpegThumbnail:
+                    fs.readFileSync(
+                        path.join(
+                            __dirname,
+                            '../assets/bot_image.jpg'
+                        )
+                    ),
+
+                contextInfo: {
+                    externalAdReply: {
+                        title:
+                            '♫ 𝐋ɪɴᴜх 𝐕ɪʙᴇꜱ',
+
+                        body:
+                            '🎧 Bass Boosted Audio',
+
+                        thumbnailUrl:
+                            'https://o.uguu.se/kYrlzKnK.jpg',
+
+                        mediaType: 1,
+
+                        renderLargerThumbnail: true
+                    }
+                }
+
+            }, {
+                quoted: message
+            });
+
+            // ================= SUCCESS =================
+
+            await sock.sendMessage(chatId, {
+                react: {
+                    text: '✅',
+                    key: message.key
+                }
+            });
+
+            // ================= CLEANUP =================
+
+            setTimeout(() => {
+
+                try {
+
+                    if (
+                        fs.existsSync(inputPath)
+                    ) {
+
+                        fs.unlinkSync(
+                            inputPath
+                        );
+                    }
+
+                    if (
+                        fs.existsSync(outputPath)
+                    ) {
+
+                        fs.unlinkSync(
+                            outputPath
+                        );
+                    }
+
+                } catch {}
+
+            }, 120000);
+
+        } catch (err) {
+
+            console.log(
+                'BASS ERROR:',
+                err
+            );
+
+            await sock.sendMessage(chatId, {
+                react: {
+                    text: '❌',
+                    key: message.key
+                }
+            });
+
+            await sock.sendMessage(chatId, {
+                text:
+`╭━━━〔 ❌ Bass Failed 〕━━━╮
+┃
+┃ ✦ Failed to process audio
+┃ ✦ Try another media
+┃
+╰━━━━━━━━━━━━━━━━━━╯`
+            }, {
+                quoted: message
             });
 
         }
 
-        // Unique names
-        const timestamp = Date.now();
-
-        const inputPath =
-            path.join(
-                tempDir,
-                `input_${timestamp}.${type}`
-            );
-
-        const outputPath =
-            path.join(
-                tempDir,
-                `output_${timestamp}.mp3`
-            );
-
-        // Save input
-        fs.writeFileSync(inputPath, buffer);
-
-        // Bass boost convert
-        await new Promise((resolve, reject) => {
-
-            ffmpeg(inputPath)
-                .audioFilter('bass=g=20:f=100:w=0.5')
-                .audioCodec('libmp3lame')
-                .format('mp3')
-                .save(outputPath)
-                .on('end', resolve)
-                .on('error', reject);
-
-        });
-
-        // Add metadata + image
-        NodeID3.write({
-
-            title: '♫ 𝐋ɪɴᴜх 𝐕ɪʙᴇꜱ',
-            artist: '𝐋ɪɴᴜх 𝐒ᴇʀ 🧃🕊️',
-            album: '🎧 𝐁𝐚𝐬𝐬 𝐁ᴏᴏ𝐬𝐭',
-            performerInfo: '𝐋ɪɴᴜх 𝐒ᴇʀ',
-
-            image: {
-                mime: 'image/jpeg',
-                type: {
-                    id: 3,
-                    name: 'front cover'
-                },
-                description: 'Cover',
-                imageBuffer: fs.readFileSync(
-                    path.join(
-                        __dirname,
-                        '../assets/bot_image.jpg'
-                    )
-                )
-            }
-
-        }, outputPath);
-
-        // Read output
-        const audioBuffer =
-            fs.readFileSync(outputPath);
-
-        // Send audio
-        await sock.sendMessage(chatId, {
-
-            audio: audioBuffer,
-            mimetype: 'audio/mpeg',
-            ptt: false,
-
-            fileName:
-            'linuxser.mp3',
-
-            contextInfo: {
-                externalAdReply: {
-                    title: '♫ 𝐋ɪɴᴜх 𝐕ɪʙᴇꜱ',
-                    body: '🎧 Bass Boosted Audio',
-                    thumbnailUrl:
-                    'https://o.uguu.se/kYrlzKnK.jpg',
-                    mediaType: 1,
-                    renderLargerThumbnail: true
-                }
-            }
-
-        }, { quoted: message });
-
-        // Cleanup
-        fs.unlinkSync(inputPath);
-        fs.unlinkSync(outputPath);
-
-        // Success react
-        await sock.sendMessage(chatId, {
-            react: {
-                text: '✅',
-                key: message.key
-            }
-        });
-
-    } catch (e) {
-
-        console.log('BASS ERROR:', e);
-
-        await sock.sendMessage(chatId, {
-            text: `❌ Error:\n${e.message}`
-        }, { quoted: message });
-
     }
 
-}
-
-module.exports = bassCommand;
+};
