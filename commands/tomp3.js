@@ -22,10 +22,12 @@ async function tomp3Command(sock, chatId, message) {
 `╭━━━〔 ⚠️ Reply Required 〕━━━╮
 ┃
 ┃ ✦ Reply to a video or audio
-┃ ✦ Then use the command again
+┃ ✦ Then use .tomp3 again
 ┃
 ╰━━━━━━━━━━━━━━━━━━╯`
-            }, { quoted: message });
+            }, {
+                quoted: message
+            });
 
         }
 
@@ -70,11 +72,13 @@ async function tomp3Command(sock, chatId, message) {
 ┃ ✦ Video or audio files
 ┃
 ╰━━━━━━━━━━━━━━━━━━╯`
-            }, { quoted: message });
+            }, {
+                quoted: message
+            });
 
         }
 
-        // ================= REACTION =================
+        // ================= REACT =================
 
         await sock.sendMessage(chatId, {
             react: {
@@ -96,7 +100,7 @@ async function tomp3Command(sock, chatId, message) {
 
         }
 
-        // ================= TEMP FOLDER =================
+        // ================= TEMP =================
 
         const tempDir =
             path.join(
@@ -185,17 +189,19 @@ async function tomp3Command(sock, chatId, message) {
         const audioBuffer =
             fs.readFileSync(outputPath);
 
-        // ================= SEND DOCUMENT =================
+        // ================= SEND AUDIO =================
 
         await sock.sendMessage(chatId, {
 
-            document: audioBuffer,
+            audio: audioBuffer,
 
             mimetype:
                 'audio/mpeg',
 
             fileName:
-                'linuxser.mp3'
+                'linuxser.mp3',
+
+            ptt: false
 
         }, {
             quoted: message
