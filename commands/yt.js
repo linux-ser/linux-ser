@@ -1,4 +1,5 @@
 const ytdl = require("@distube/ytdl-core");
+const https = require("https");
 
 module.exports = async function ytCommand(sock, chatId, message) {
 
@@ -61,36 +62,64 @@ module.exports = async function ytCommand(sock, chatId, message) {
             );
         }
 
-        // GET VIDEO INFO
+        // LOADING REACTION
+        await sock.sendMessage(chatId, {
+            react: {
+                text: "🔍",
+                key: message.key,
+            },
+        });
+
+        // FIXED GET INFO
         let info;
 
         try {
 
-            info = await ytdl.getInfo(url);
+            const agent = ytdl.createAgent();
+
+            info = await ytdl.getInfo(url, {
+                requestOptions: {
+                    agent,
+                    headers: {
+                        "User-Agent":
+                            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/122.0.0.0 Safari/537.36",
+                    },
+                },
+            });
 
         } catch (err) {
 
             console.log("GET INFO ERROR:", err);
 
-            await sock.sendMessage(chatId, {
-                react: {
-                    text: "❌",
-                    key: message.key,
-                },
-            });
+            // SECOND TRY
+            try {
 
-            return await sock.sendMessage(
-                chatId,
-                {
-                    text:
+                info = await ytdl.getBasicInfo(url);
+
+            } catch (err2) {
+
+                console.log("BASIC INFO ERROR:", err2);
+
+                await sock.sendMessage(chatId, {
+                    react: {
+                        text: "❌",
+                        key: message.key,
+                    },
+                });
+
+                return await sock.sendMessage(
+                    chatId,
+                    {
+                        text:
 `╭━━━〔 ⚠️ Video Unavailable 〕━━━╮
 ┃ ✦ Failed to fetch video
 ┃ ✦ Private or restricted video
-┃ ✦ Region blocked content
+┃ ✦ Invalid YouTube content
 ╰━━━━━━━━━━━━━━━━━━╯`
-                },
-                { quoted: message }
-            );
+                    },
+                    { quoted: message }
+                );
+            }
         }
 
         const title = info.videoDetails.title;
@@ -132,7 +161,7 @@ module.exports = async function ytCommand(sock, chatId, message) {
             { quoted: message }
         );
 
-        // REPLY LISTENER
+        // LISTENER
         const listener = async (update) => {
 
             try {
@@ -152,7 +181,7 @@ module.exports = async function ytCommand(sock, chatId, message) {
 
                 if (repliedId !== sentMsg.key.id) return;
 
-                // AUDIO DOWNLOAD
+                // AUDIO
                 if (reply === "1") {
 
                     await sock.sendMessage(chatId, {
@@ -162,10 +191,11 @@ module.exports = async function ytCommand(sock, chatId, message) {
                         },
                     });
 
-                    const audioFormats = ytdl.filterFormats(
-                        info.formats,
-                        "audioonly"
-                    );
+                    const audioFormats =
+                        ytdl.filterFormats(
+                            info.formats,
+                            "audioonly"
+                        );
 
                     const audio =
                         audioFormats.find(
@@ -207,7 +237,7 @@ module.exports = async function ytCommand(sock, chatId, message) {
                     sock.ev.off("messages.upsert", listener);
                 }
 
-                // VIDEO DOWNLOAD
+                // VIDEO
                 else if (reply === "2") {
 
                     await sock.sendMessage(chatId, {
@@ -217,12 +247,13 @@ module.exports = async function ytCommand(sock, chatId, message) {
                         },
                     });
 
-                    const video = ytdl.chooseFormat(
-                        info.formats,
-                        {
-                            quality: "18",
-                        }
-                    );
+                    const video =
+                        ytdl.chooseFormat(
+                            info.formats,
+                            {
+                                quality: "18",
+                            }
+                        );
 
                     await sock.sendMessage(
                         chatId,
