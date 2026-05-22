@@ -1,7 +1,5 @@
 const axios = require('axios');
 const yts = require('yt-search');
-const fs = require('fs');
-const path = require('path');
 
 const AXIOS_DEFAULTS = {
 	timeout: 60000,
@@ -165,7 +163,6 @@ async function songCommand(
 
 		let video;
 
-		// YOUTUBE LINK
 		if (
 			query.includes('youtube.com') ||
 			query.includes('youtu.be')
@@ -252,7 +249,7 @@ async function songCommand(
 			await axios({
 				method: 'GET',
 				url: audioUrl,
-				responseType: 'stream',
+				responseType: 'arraybuffer',
 				timeout: 120000,
 				headers: {
 					'User-Agent':
@@ -262,28 +259,8 @@ async function songCommand(
 				}
 			});
 
-		const chunks = [];
-
-		await new Promise((resolve, reject) => {
-
-			audioResponse.data.on(
-				'data',
-				chunk => chunks.push(chunk)
-			);
-
-			audioResponse.data.on(
-				'end',
-				resolve
-			);
-
-			audioResponse.data.on(
-				'error',
-				reject
-			);
-		});
-
 		const audioBuffer =
-			Buffer.concat(chunks);
+			Buffer.from(audioResponse.data);
 
 		if (
 			!audioBuffer ||
@@ -311,26 +288,11 @@ async function songCommand(
 				thumb.data
 			);
 
-		// ================= SAVE AUDIO =================
-
-		const tempPath =
-			path.join(
-				__dirname,
-				`song_${Date.now()}.mp3`
-			);
-
-		fs.writeFileSync(
-			tempPath,
-			audioBuffer
-		);
-
 		// ================= SEND AUDIO =================
 
 		await sock.sendMessage(chatId, {
 
-			audio: {
-				url: tempPath
-			},
+			audio: audioBuffer,
 
 			mimetype:
 				'audio/mpeg',
@@ -339,13 +301,6 @@ async function songCommand(
 `${video.title}.mp3`,
 
 			ptt: false,
-
-			title:
-				video.title,
-
-			performer:
-				video.author?.name ||
-				'Unknown Artist',
 
 			jpegThumbnail:
 				thumbBuffer,
@@ -378,21 +333,6 @@ async function songCommand(
 		}, {
 			quoted: message
 		});
-
-		// ================= DELETE FILE =================
-
-		setTimeout(() => {
-
-			if (
-				fs.existsSync(tempPath)
-			) {
-
-				fs.unlinkSync(
-					tempPath
-				);
-			}
-
-		}, 10000);
 
 		// ================= SUCCESS =================
 
