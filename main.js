@@ -1154,14 +1154,14 @@ break;
             case userMessage.startsWith('.fb') || userMessage.startsWith('.facebook'):
                 await facebookCommand(sock, chatId, message);
                 break;
-            case userMessage.startsWith('.music'):
-                await playCommand(sock, chatId, message);
-                break;
             case userMessage.startsWith('.spotify'):
                 await spotifyCommand(sock, chatId, message);
                 break;
-            case userMessage.startsWith('.play') || userMessage.startsWith('.mp3') || userMessage.startsWith('.ytmp3') || userMessage.startsWith('.song'):
+            case userMessage.startsWith('.mp3') || userMessage.startsWith('.ytmp3') || userMessage.startsWith('.song'):
                 await songCommand(sock, chatId, message);
+                break;
+            case userMessage.startsWith('.play'):
+                await playCommand(sock, chatId, message);
                 break;
             case userMessage.startsWith('.video') || userMessage.startsWith('.ytmp4'):
                 await videoCommand(sock, chatId, message);
