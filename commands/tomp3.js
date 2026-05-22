@@ -18,7 +18,13 @@ async function tomp3Command(sock, chatId, message) {
         if (!quoted || !quoted.quotedMessage) {
 
             return sock.sendMessage(chatId, {
-                text: 'Reply to video or audio!'
+                text:
+`╭━━━〔 ⚠️ Reply Required 〕━━━╮
+┃
+┃ ✦ Reply to a video or audio
+┃ ✦ Then use the command again
+┃
+╰━━━━━━━━━━━━━━━━━━╯`
             }, { quoted: message });
 
         }
@@ -28,7 +34,8 @@ async function tomp3Command(sock, chatId, message) {
         let stream;
         let ext;
 
-        // Video
+        // ================= VIDEO =================
+
         if (qmsg.videoMessage) {
 
             stream = await downloadContentFromMessage(
@@ -40,7 +47,8 @@ async function tomp3Command(sock, chatId, message) {
 
         }
 
-        // Audio
+        // ================= AUDIO =================
+
         else if (qmsg.audioMessage) {
 
             stream = await downloadContentFromMessage(
@@ -55,12 +63,19 @@ async function tomp3Command(sock, chatId, message) {
         else {
 
             return sock.sendMessage(chatId, {
-                text: 'Reply to video or audio!'
+                text:
+`╭━━━〔 ⚠️ Unsupported Media 〕━━━╮
+┃
+┃ ✦ Reply only to:
+┃ ✦ Video or audio files
+┃
+╰━━━━━━━━━━━━━━━━━━╯`
             }, { quoted: message });
 
         }
 
-        // React
+        // ================= REACTION =================
+
         await sock.sendMessage(chatId, {
             react: {
                 text: '🎵',
@@ -68,18 +83,26 @@ async function tomp3Command(sock, chatId, message) {
             }
         });
 
-        // Buffer
+        // ================= BUFFER =================
+
         let buffer = Buffer.from([]);
 
         for await (const chunk of stream) {
 
-            buffer = Buffer.concat([buffer, chunk]);
+            buffer = Buffer.concat([
+                buffer,
+                chunk
+            ]);
 
         }
 
-        // Temp folder
+        // ================= TEMP FOLDER =================
+
         const tempDir =
-            path.join(__dirname, '../temp');
+            path.join(
+                __dirname,
+                '../temp'
+            );
 
         if (!fs.existsSync(tempDir)) {
 
@@ -101,72 +124,103 @@ async function tomp3Command(sock, chatId, message) {
                 `${Date.now()}.mp3`
             );
 
-        fs.writeFileSync(inputPath, buffer);
+        fs.writeFileSync(
+            inputPath,
+            buffer
+        );
 
-        // Convert to MP3
+        // ================= CONVERT =================
+
         await new Promise((resolve, reject) => {
 
             ffmpeg(inputPath)
-                .toFormat('mp3')
+                .audioCodec('libmp3lame')
+                .audioBitrate(128)
+                .format('mp3')
                 .save(outputPath)
                 .on('end', resolve)
                 .on('error', reject);
 
         });
 
-        // Add MP3 metadata + cover
+        // ================= METADATA =================
+
         NodeID3.write({
 
-            title: '♪ 𝐕ɪʙᴇ 𝐁ʏ 𝐋ꜱ',
-            artist: '𝐋ɪɴᴜх 𝐒ᴇʀ 🧃🕊️',
-            album: '𝐋ɪɴᴜх 𝐒ᴇʀ',
-            performerInfo: '𝐋ɪɴᴜх 𝐒ᴇʀ',
+            title:
+                '♪ 𝐕ɪʙᴇ 𝐁ʏ 𝐋ꜱ',
+
+            artist:
+                '𝐋ɪɴᴜх 𝐒ᴇʀ 🧃🕊️',
+
+            album:
+                '𝐋ɪɴᴜх 𝐒ᴇʀ',
+
+            performerInfo:
+                '𝐋ɪɴᴜх 𝐒ᴇʀ',
 
             image: {
                 mime: 'image/jpeg',
+
                 type: {
                     id: 3,
                     name: 'front cover'
                 },
+
                 description: 'Cover',
-                imageBuffer: fs.readFileSync(
-                    path.join(
-                        __dirname,
-                        '../assets/bot_image.jpg'
+
+                imageBuffer:
+                    fs.readFileSync(
+                        path.join(
+                            __dirname,
+                            '../assets/bot_image.jpg'
+                        )
                     )
-                )
             }
 
         }, outputPath);
 
-        // Final MP3
-        const mp3Buffer =
-            fs.readFileSync(outputPath);
+        // ================= SEND MP3 =================
 
-        // Send MP3
         await sock.sendMessage(chatId, {
 
-            audio: mp3Buffer,
-            mimetype: 'audio/mpeg',
-            fileName: 'linuxser.mp3',
+            audio: {
+                url: outputPath
+            },
+
+            mimetype:
+                'audio/mpeg',
+
+            fileName:
+                'linuxser.mp3',
+
+            ptt: false,
 
             contextInfo: {
                 externalAdReply: {
-                    title: '𝐋ɪɴᴜх 𝐒ᴇʀ 🧃🕊️',
-                    body: 'MP3 Converter',
-                    thumbnailUrl: 'https://o.uguu.se/kYrlzKnK.jpg',
+
+                    title:
+                        '𝐋ɪɴᴜх 𝐒ᴇʀ 🧃🕊️',
+
+                    body:
+                        'MP3 Converter',
+
+                    thumbnailUrl:
+                        'https://o.uguu.se/kYrlzKnK.jpg',
+
                     mediaType: 1,
-                    renderLargerThumbnail: true
+
+                    renderLargerThumbnail:
+                        true
                 }
             }
 
-        }, { quoted: message });
+        }, {
+            quoted: message
+        });
 
-        // Cleanup
-        fs.unlinkSync(inputPath);
-        fs.unlinkSync(outputPath);
+        // ================= SUCCESS =================
 
-        // Done react
         await sock.sendMessage(chatId, {
             react: {
                 text: '✅',
@@ -174,15 +228,58 @@ async function tomp3Command(sock, chatId, message) {
             }
         });
 
+        // ================= CLEANUP =================
+
+        setTimeout(() => {
+
+            try {
+
+                if (
+                    fs.existsSync(inputPath)
+                ) {
+
+                    fs.unlinkSync(
+                        inputPath
+                    );
+                }
+
+                if (
+                    fs.existsSync(outputPath)
+                ) {
+
+                    fs.unlinkSync(
+                        outputPath
+                    );
+                }
+
+            } catch {}
+
+        }, 15000);
+
     } catch (e) {
 
-        console.log('TOMP3 ERROR:', e);
+        console.log(
+            'TOMP3 ERROR:',
+            e
+        );
 
         await sock.sendMessage(chatId, {
             react: {
                 text: '❌',
                 key: message.key
             }
+        });
+
+        await sock.sendMessage(chatId, {
+            text:
+`╭━━━〔 ❌ Convert Failed 〕━━━╮
+┃
+┃ ✦ Failed to convert media
+┃ ✦ Try another file
+┃
+╰━━━━━━━━━━━━━━━━━━╯`
+        }, {
+            quoted: message
         });
 
     }
