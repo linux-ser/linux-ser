@@ -1,170 +1,47 @@
+const fs = require('fs');
+const path = require('path');
 const axios = require('axios');
 const yts = require('yt-search');
 
-const AXIOS_DEFAULTS = {
-	timeout: 60000,
-	headers: {
-		'User-Agent':
-			'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-		'Accept':
-			'application/json, text/plain, */*'
-	}
-};
-
-// ================= RETRY FUNCTION =================
-
-async function tryRequest(getter, attempts = 3) {
-
-	let lastError;
-
-	for (let attempt = 1; attempt <= attempts; attempt++) {
-
-		try {
-
-			return await getter();
-
-		} catch (err) {
-
-			lastError = err;
-
-			if (attempt < attempts) {
-
-				await new Promise(r =>
-					setTimeout(r, 1000 * attempt)
-				);
-			}
-		}
-	}
-
-	throw lastError;
-}
-
-// ================= API FUNCTIONS =================
-
-async function getEliteProTechDownloadByUrl(youtubeUrl) {
-
-	const apiUrl =
-`https://eliteprotech-apis.zone.id/ytdown?url=${encodeURIComponent(youtubeUrl)}&format=mp3`;
-
-	const res = await tryRequest(() =>
-		axios.get(apiUrl, AXIOS_DEFAULTS)
-	);
-
-	if (
-		res?.data?.success &&
-		res?.data?.downloadURL
-	) {
-
-		return {
-			download: res.data.downloadURL
-		};
-	}
-
-	throw new Error(
-		'EliteProTech returned no download'
-	);
-}
-
-async function getYupraDownloadByUrl(youtubeUrl) {
-
-	const apiUrl =
-`https://api.yupra.my.id/api/downloader/ytmp3?url=${encodeURIComponent(youtubeUrl)}`;
-
-	const res = await tryRequest(() =>
-		axios.get(apiUrl, AXIOS_DEFAULTS)
-	);
-
-	if (
-		res?.data?.success &&
-		res?.data?.data?.download_url
-	) {
-
-		return {
-			download:
-				res.data.data.download_url
-		};
-	}
-
-	throw new Error(
-		'Yupra returned no download'
-	);
-}
-
-async function getOkatsuDownloadByUrl(youtubeUrl) {
-
-	const apiUrl =
-`https://okatsu-rolezapiiz.vercel.app/downloader/ytmp3?url=${encodeURIComponent(youtubeUrl)}`;
-
-	const res = await tryRequest(() =>
-		axios.get(apiUrl, AXIOS_DEFAULTS)
-	);
-
-	if (res?.data?.dl) {
-
-		return {
-			download:
-				res.data.dl
-		};
-	}
-
-	throw new Error(
-		'Okatsu returned no download'
-	);
-}
-
-// ================= MAIN COMMAND =================
-
-async function songCommand(
-	sock,
-	chatId,
-	message,
-	args = []
-) {
+async function songCommand(sock, chatId, message, args = []) {
 
 	try {
 
-		// ================= START REACTION =================
+		// ================= REACTION =================
 
 		await sock.sendMessage(chatId, {
 			react: {
-				text: '🎧',
+				text: '🎵',
 				key: message.key
 			}
 		});
 
-		// ================= GET QUERY =================
+		// ================= QUERY =================
 
-		let text = '';
+		let query = '';
 
 		if (
 			Array.isArray(args) &&
 			args.length > 0
 		) {
 
-			text = args.join(' ').trim();
+			query = args.join(' ').trim();
 
 		} else {
 
-			text =
+			query =
 				message.message?.conversation ||
 				message.message?.extendedTextMessage?.text ||
 				'';
 
-			text = text
+			query = query
 				.replace(/^\.song\s*/i, '')
 				.trim();
 		}
 
-		// ================= EMPTY QUERY =================
+		// ================= EMPTY =================
 
-		if (!text) {
-
-			await sock.sendMessage(chatId, {
-				react: {
-					text: '⚠️',
-					key: message.key
-				}
-			});
+		if (!query) {
 
 			return await sock.sendMessage(chatId, {
 				text:
@@ -183,31 +60,22 @@ async function songCommand(
 			});
 		}
 
-		let video;
-
 		// ================= SEARCH =================
 
 		await sock.sendMessage(chatId, {
 			react: {
-				text: '🔍',
+				text: '🔎',
 				key: message.key
 			}
 		});
 
 		const search =
-			await yts(text);
+			await yts(query);
 
 		if (
 			!search ||
 			!search.videos.length
 		) {
-
-			await sock.sendMessage(chatId, {
-				react: {
-					text: '❌',
-					key: message.key
-				}
-			});
 
 			return await sock.sendMessage(chatId, {
 				text:
@@ -222,7 +90,8 @@ async function songCommand(
 			});
 		}
 
-		video = search.videos[0];
+		const video =
+			search.videos[0];
 
 		// ================= DETAILS =================
 
@@ -256,130 +125,84 @@ async function songCommand(
 			quoted: message
 		});
 
-		// ================= DOWNLOAD REACTION =================
+		// ================= API =================
 
-		await sock.sendMessage(chatId, {
-			react: {
-				text: '📥',
-				key: message.key
-			}
-		});
+		const api =
+`https://api.yupra.my.id/api/downloader/ytmp3?url=${encodeURIComponent(video.url)}`;
 
-		// ================= API FALLBACK =================
+		const apiRes =
+			await axios.get(api);
 
-		let audioBuffer;
-		let downloadSuccess = false;
+		const audioUrl =
+			apiRes.data?.data?.download_url;
 
-		const apiMethods = [
+		if (!audioUrl) {
 
-			{
-				name: 'EliteProTech',
-				method: () =>
-					getEliteProTechDownloadByUrl(
-						video.url
-					)
-			},
-
-			{
-				name: 'Yupra',
-				method: () =>
-					getYupraDownloadByUrl(
-						video.url
-					)
-			},
-
-			{
-				name: 'Okatsu',
-				method: () =>
-					getOkatsuDownloadByUrl(
-						video.url
-					)
-			}
-		];
-
-		for (const apiMethod of apiMethods) {
-
-			try {
-
-				const audioData =
-					await apiMethod.method();
-
-				const audioUrl =
-					audioData.download;
-
-				if (!audioUrl) {
-					continue;
-				}
-
-				const audioResponse =
-					await axios({
-						method: 'GET',
-						url: audioUrl,
-						responseType: 'arraybuffer',
-						timeout: 120000,
-						headers: {
-							'User-Agent':
-								'Mozilla/5.0',
-							'Accept':
-								'*/*'
-						}
-					});
-
-				audioBuffer =
-					Buffer.from(
-						audioResponse.data
-					);
-
-				if (
-					audioBuffer &&
-					audioBuffer.length > 10000
-				) {
-
-					downloadSuccess = true;
-					break;
-				}
-
-			} catch (err) {
-
-				console.log(
-`${apiMethod.name} failed:`,
-					err.message
-				);
-
-				continue;
-			}
+			throw new Error(
+				'No audio URL'
+			);
 		}
 
-		// ================= FAILED =================
+		// ================= DOWNLOAD =================
+
+		const audioRes =
+			await axios({
+				method: 'GET',
+				url: audioUrl,
+				responseType: 'arraybuffer',
+				timeout: 120000
+			});
+
+		const audioBuffer =
+			Buffer.from(
+				audioRes.data
+			);
 
 		if (
-			!downloadSuccess ||
-			!audioBuffer
+			!audioBuffer ||
+			audioBuffer.length < 10000
 		) {
 
 			throw new Error(
-				'All download sources failed.'
+				'Invalid audio'
 			);
 		}
+
+		// ================= SAFE FILE NAME =================
+
+		const safeTitle =
+			video.title
+				.replace(/[\\/:*?"<>|]/g, '')
+				.substring(0, 80);
+
+		const tempFile =
+			path.join(
+				__dirname,
+`${safeTitle}.mp3`
+			);
+
+		// ================= SAVE FILE =================
+
+		fs.writeFileSync(
+			tempFile,
+			audioBuffer
+		);
 
 		// ================= SEND AUDIO =================
 
 		await sock.sendMessage(chatId, {
 
-			audio: audioBuffer,
+			audio: {
+				url: tempFile
+			},
 
-			mimetype: 'audio/mpeg',
+			mimetype:
+				'audio/mpeg',
 
 			fileName:
-`${video.title}.mp3`,
+`${safeTitle}.mp3`,
 
 			ptt: false,
-
-			title:
-				video.title,
-
-			performer:
-				video.author?.name || 'Unknown Artist',
 
 			contextInfo: {
 				externalAdReply: {
@@ -391,7 +214,8 @@ async function songCommand(
 						video.title,
 
 					body:
-						video.author?.name || 'Unknown Artist',
+						video.author?.name ||
+						'Unknown Artist',
 
 					mediaType: 1,
 
@@ -410,6 +234,21 @@ async function songCommand(
 			quoted: message
 		});
 
+		// ================= DELETE =================
+
+		setTimeout(() => {
+
+			if (
+				fs.existsSync(tempFile)
+			) {
+
+				fs.unlinkSync(
+					tempFile
+				);
+			}
+
+		}, 30000);
+
 		// ================= SUCCESS =================
 
 		await sock.sendMessage(chatId, {
@@ -421,12 +260,10 @@ async function songCommand(
 
 	} catch (err) {
 
-		console.error(
-			'Song command error:',
-			err
+		console.log(
+			'Song Error:',
+			err.message
 		);
-
-		// ================= ERROR REACTION =================
 
 		await sock.sendMessage(chatId, {
 			react: {
@@ -439,8 +276,8 @@ async function songCommand(
 			text:
 `╭━━━〔 ❌ Download Failed 〕━━━╮
 ┃
-┃ ✦ Failed to download song
-┃ ✦ Please try again later
+┃ ✦ Unable to download audio
+┃ ✦ Try another song later
 ┃
 ╰━━━━━━━━━━━━━━━━━━╯`
 		}, {
