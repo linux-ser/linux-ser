@@ -1,3 +1,5 @@
+const axios = require("axios");
+
 module.exports = async function ytCommand(sock, chatId, message) {
 
     try {
@@ -25,7 +27,22 @@ module.exports = async function ytCommand(sock, chatId, message) {
             }, { quoted: message });
         }
 
-        // LOADING
+        // INVALID URL
+        if (
+            !url.includes("youtube.com") &&
+            !url.includes("youtu.be")
+        ) {
+
+            return await sock.sendMessage(chatId, {
+                text:
+`╭━━━〔 🚫 Invalid URL 〕━━━╮
+┃ ✦ Unsupported YouTube link
+┃ ✦ Please check the URL
+╰━━━━━━━━━━━━━━━━━━╯`
+            }, { quoted: message });
+        }
+
+        // REACTION
         await sock.sendMessage(chatId, {
             react: {
                 text: "🔍",
@@ -33,29 +50,38 @@ module.exports = async function ytCommand(sock, chatId, message) {
             },
         });
 
-        // API
+        // API REQUEST
         const api =
-`https://api.vevioz.com/api/button/mp4?url=${encodeURIComponent(url)}`;
+`https://api.giftedtech.web.id/api/download/ytdl?apikey=gifted&url=${encodeURIComponent(url)}`;
 
-        // VIDEO ID
-        const idMatch =
-            url.match(
-                /(?:youtu\.be\/|youtube\.com\/watch\?v=)([^&]+)/i
-            );
+        const response = await axios.get(api);
 
-        const videoId = idMatch ? idMatch[1] : null;
+        const data = response.data;
 
-        const thumb =
-            `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+        if (!data.success) {
+
+            return await sock.sendMessage(chatId, {
+                text:
+`╭━━━〔 ❌ Download Failed 〕━━━╮
+┃ ✦ Failed to fetch video
+┃ ✦ Try another YouTube link
+╰━━━━━━━━━━━━━━━━━━╯`
+            }, { quoted: message });
+        }
+
+        const title = data.result.title;
+        const thumbnail = data.result.thumbnail;
+        const audio = data.result.audio;
+        const video = data.result.video;
 
         // MENU
         const sentMsg = await sock.sendMessage(
             chatId,
             {
-                image: { url: thumb },
+                image: { url: thumbnail },
                 caption:
 `╭━━━〔 🎥 YouTube Downloader 〕━━━╮
-┃ ✦ Choose download type
+┃ ✦ 🎬 ${title}
 ┃
 ┣━━━〔 📥 Download Options 〕━━━┫
 ┃ ✦ Reply *1* for Audio
@@ -65,6 +91,7 @@ module.exports = async function ytCommand(sock, chatId, message) {
             { quoted: message }
         );
 
+        // LISTENER
         const listener = async (update) => {
 
             try {
@@ -94,18 +121,29 @@ module.exports = async function ytCommand(sock, chatId, message) {
                         },
                     });
 
-                    const audioUrl =
-`https://api.vevioz.com/api/button/mp3?url=${encodeURIComponent(url)}`;
-
                     await sock.sendMessage(
                         chatId,
                         {
                             audio: {
-                                url: audioUrl
+                                url: audio
                             },
                             mimetype: "audio/mp4",
-                            fileName: "youtube-audio.mp3",
+                            fileName: `${title}.mp3`,
                             ptt: false,
+                        },
+                        { quoted: m }
+                    );
+
+                    await sock.sendMessage(
+                        chatId,
+                        {
+                            text:
+`╭━━━〔 🎵 Audio Downloaded 〕━━━╮
+┃ ✦ 🎧 ${title}
+┃
+┃ ✦ ✅ Download Completed
+┃ ✦ 📥 Audio Sent Successfully
+╰━━━━━━━━━━━━━━━━━━╯`
                         },
                         { quoted: m }
                     );
@@ -134,12 +172,14 @@ module.exports = async function ytCommand(sock, chatId, message) {
                         chatId,
                         {
                             video: {
-                                url: api
+                                url: video
                             },
                             mimetype: "video/mp4",
-                            fileName: "youtube-video.mp4",
+                            fileName: `${title}.mp4`,
                             caption:
 `╭━━━〔 🎬 Video Downloaded 〕━━━╮
+┃ ✦ 📹 ${title}
+┃
 ┃ ✦ ✅ Download Completed
 ┃ ✦ 📥 Video Sent Successfully
 ╰━━━━━━━━━━━━━━━━━━╯`
@@ -159,7 +199,7 @@ module.exports = async function ytCommand(sock, chatId, message) {
 
             } catch (err) {
 
-                console.log(err);
+                console.log("DOWNLOAD ERROR:", err);
 
                 await sock.sendMessage(chatId, {
                     text:
@@ -175,7 +215,7 @@ module.exports = async function ytCommand(sock, chatId, message) {
 
     } catch (error) {
 
-        console.log(error);
+        console.log("YT ERROR:", error);
 
         await sock.sendMessage(chatId, {
             text:
