@@ -1,3 +1,4 @@
+
 const axios = require('axios');
 const yts = require('yt-search');
 const fs = require('fs');
@@ -118,7 +119,16 @@ async function songCommand(sock, chatId, message, args = []) {
 
 		if (!text) {
 			await sock.sendMessage(chatId, {
-				text: '❌ Usage: .song <song name or YouTube link>'
+				text:
+`╭━━━〔 🎵 Song Downloader 〕━━━╮
+┃ ✦ Please provide
+┃ ✦ a song name or link
+┃
+┃ 📌 Example:
+┃ ✦ .song faded
+┃ ✦ .song believer
+┃ ✦ .song https://youtu.be/xxxx
+╰━━━━━━━━━━━━━━━━━━╯`
 			}, {
 				quoted: message
 			});
@@ -157,7 +167,11 @@ async function songCommand(sock, chatId, message, args = []) {
 			if (!search || !search.videos.length) {
 
 				await sock.sendMessage(chatId, {
-					text: '❌ No results found.'
+					text:
+`╭━━━〔 ❌ Song Not Found 〕━━━╮
+┃ ✦ No matching songs found
+┃ ✦ Try another song name
+╰━━━━━━━━━━━━━━━━━━╯`
 				}, {
 					quoted: message
 				});
@@ -175,12 +189,22 @@ async function songCommand(sock, chatId, message, args = []) {
 				url: video.thumbnail
 			},
 			caption:
-`🎵 Downloading Song...
-
-📌 Title: ${video.title}
-⏱ Duration: ${video.timestamp}
-
-⏳ Please wait...`
+`╭━━━〔 🎵 Audio Details 〕━━━╮
+┃ ✦ 🎧 Title:
+┃ ✦ ${video.title}
+┃
+┃ ✦ 🎤 Artist:
+┃ ✦ ${video.author?.name || 'Unknown Artist'}
+┃
+┃ ✦ 💿 Album:
+┃ ✦ YouTube Music
+┃
+┃ ✦ ⏱ Duration:
+┃ ✦ ${video.timestamp}
+┃
+┃ ✦ 🔍 Status:
+┃ ✦ Downloading Audio...
+╰━━━━━━━━━━━━━━━━━━╯`
 		}, {
 			quoted: message
 		});
@@ -372,15 +396,21 @@ async function songCommand(sock, chatId, message, args = []) {
 			}
 		});
 
-		let errorMessage = '❌ Failed to download song.';
-
+		let errorMessage =
+`╭━━━〔 ❌ Download Failed 〕━━━╮
+┃ ✦ Failed to download song
+┃ ✦ Please try again later
+╰━━━━━━━━━━━━━━━━━━╯`;
 		if (
 			err.message &&
 			err.message.includes('blocked')
 		) {
 
 			errorMessage =
-				'❌ Download blocked or unavailable in your region.';
+`╭━━━〔 🚫 Region Blocked 〕━━━╮
+┃ ✦ Audio unavailable
+┃ ✦ In your current region
+╰━━━━━━━━━━━━━━━━━━╯`;
 
 		} else if (
 			err.message &&
@@ -388,7 +418,10 @@ async function songCommand(sock, chatId, message, args = []) {
 		) {
 
 			errorMessage =
-				'❌ All download servers failed.';
+`╭━━━〔 ❌ Server Failed 〕━━━╮
+┃ ✦ All download servers failed
+┃ ✦ Please try again later
+╰━━━━━━━━━━━━━━━━━━╯`;
 		}
 
 		await sock.sendMessage(chatId, {
