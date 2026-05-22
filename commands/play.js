@@ -1,8 +1,15 @@
 const songCommand = require('./song');
 
-async function playCommand(sock, chatId, message) {
+async function playCommand(
+    sock,
+    chatId,
+    message,
+    args = []
+) {
 
     try {
+
+        // ================= GET MESSAGE =================
 
         const text =
             message.message?.conversation ||
@@ -10,12 +17,22 @@ async function playCommand(sock, chatId, message) {
             '';
 
         // REMOVE .play
-        const query = text
-            .replace(/^\.play\s*/i, '')
+        let query = text
+            .replace(/^\.play/i, '')
             .trim();
 
-        // EMPTY QUERY FIX
-        if (!query) {
+        // USE ARGS IF AVAILABLE
+        if (
+            Array.isArray(args) &&
+            args.length > 0
+        ) {
+
+            query = args.join(' ').trim();
+        }
+
+        // ================= EMPTY QUERY =================
+
+        if (!query || query.length === 0) {
 
             await sock.sendMessage(chatId, {
                 react: {
@@ -40,7 +57,8 @@ async function playCommand(sock, chatId, message) {
             });
         }
 
-        // USE SONG COMMAND
+        // ================= RUN SONG COMMAND =================
+
         await songCommand(
             sock,
             chatId,
@@ -55,6 +73,7 @@ async function playCommand(sock, chatId, message) {
             err
         );
 
+        // ERROR REACTION
         await sock.sendMessage(chatId, {
             react: {
                 text: '❌',
