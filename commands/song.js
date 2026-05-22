@@ -458,15 +458,11 @@ async function songCommand(
 			mimetype: 'audio/mpeg',
 
 			fileName:
-`linuxser.mp3`,
+            `${video.title
+	         .replace(/[\\/:*?"<>|]/g, '')
+	         .substring(0, 80)}.mp3`,
 
-			ptt: false,
-
-			title:
-				'♪ 𝐕ɪʙᴇ 𝐁ʏ 𝐋ꜱ',
-
-			performer:
-				'𝐋ɪɴᴜх 𝐒ᴇʀ 🧃🕊️'
+             ptt: false
 
 		}, {
 			quoted: message
