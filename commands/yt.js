@@ -12,7 +12,7 @@ module.exports = async function ytCommand(sock, chatId, message) {
         const args = text.split(" ");
         const url = args[1];
 
-        // NO URL
+        // CHECK URL
         if (!url) {
 
             return await sock.sendMessage(chatId, {
@@ -50,15 +50,15 @@ module.exports = async function ytCommand(sock, chatId, message) {
             },
         });
 
-        // API REQUEST
+        // FREE WORKING API
         const api =
-`https://api.giftedtech.web.id/api/download/ytdl?apikey=gifted&url=${encodeURIComponent(url)}`;
+`https://api.dreaded.site/api/ytdl/download?url=${encodeURIComponent(url)}`;
 
         const response = await axios.get(api);
 
         const data = response.data;
 
-        if (!data.success) {
+        if (!data || !data.result) {
 
             return await sock.sendMessage(chatId, {
                 text:
@@ -69,10 +69,17 @@ module.exports = async function ytCommand(sock, chatId, message) {
             }, { quoted: message });
         }
 
-        const title = data.result.title;
-        const thumbnail = data.result.thumbnail;
-        const audio = data.result.audio;
-        const video = data.result.video;
+        const title =
+            data.result.title || "YouTube Media";
+
+        const thumbnail =
+            data.result.thumbnail;
+
+        const audio =
+            data.result.audio;
+
+        const video =
+            data.result.video;
 
         // MENU
         const sentMsg = await sock.sendMessage(
