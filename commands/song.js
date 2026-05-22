@@ -1,194 +1,130 @@
-
 const axios = require('axios');
 const yts = require('yt-search');
-const fs = require('fs');
-const path = require('path');
-const { toAudio } = require('../lib/converter');
-
-const AXIOS_DEFAULTS = {
-	timeout: 60000,
-	headers: {
-		'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-		'Accept': 'application/json, text/plain, */*'
-	}
-};
-
-async function tryRequest(getter, attempts = 3) {
-	let lastError;
-
-	for (let attempt = 1; attempt <= attempts; attempt++) {
-		try {
-			return await getter();
-		} catch (err) {
-			lastError = err;
-
-			if (attempt < attempts) {
-				await new Promise(r => setTimeout(r, 1000 * attempt));
-			}
-		}
-	}
-
-	throw lastError;
-}
-
-// ================= API FUNCTIONS =================
-
-async function getEliteProTechDownloadByUrl(youtubeUrl) {
-	const apiUrl = `https://eliteprotech-apis.zone.id/ytdown?url=${encodeURIComponent(youtubeUrl)}&format=mp3`;
-
-	const res = await tryRequest(() =>
-		axios.get(apiUrl, AXIOS_DEFAULTS)
-	);
-
-	if (res?.data?.success && res?.data?.downloadURL) {
-		return {
-			download: res.data.downloadURL,
-			title: res.data.title
-		};
-	}
-
-	throw new Error('EliteProTech ytdown returned no download');
-}
-
-async function getYupraDownloadByUrl(youtubeUrl) {
-	const apiUrl = `https://api.yupra.my.id/api/downloader/ytmp3?url=${encodeURIComponent(youtubeUrl)}`;
-
-	const res = await tryRequest(() =>
-		axios.get(apiUrl, AXIOS_DEFAULTS)
-	);
-
-	if (res?.data?.success && res?.data?.data?.download_url) {
-		return {
-			download: res.data.data.download_url,
-			title: res.data.data.title,
-			thumbnail: res.data.data.thumbnail
-		};
-	}
-
-	throw new Error('Yupra returned no download');
-}
-
-async function getOkatsuDownloadByUrl(youtubeUrl) {
-	const apiUrl = `https://okatsu-rolezapiiz.vercel.app/downloader/ytmp3?url=${encodeURIComponent(youtubeUrl)}`;
-
-	const res = await tryRequest(() =>
-		axios.get(apiUrl, AXIOS_DEFAULTS)
-	);
-
-	if (res?.data?.dl) {
-		return {
-			download: res.data.dl,
-			title: res.data.title,
-			thumbnail: res.data.thumb
-		};
-	}
-
-	throw new Error('Okatsu ytmp3 returned no download');
-}
-
-// ================= MAIN COMMAND =================
 
 async function songCommand(sock, chatId, message, args = []) {
-	try {
 
-		// 🎵 React Start
-		await sock.sendMessage(chatId, {
-			react: {
-				text: '🎵',
-				key: message.key
-			}
-		});
+    try {
 
-		// ================= GET QUERY =================
+        // START REACTION
+        await sock.sendMessage(chatId, {
+            react: {
+                text: '🎵',
+                key: message.key
+            }
+        });
 
-		let text = '';
+        // ================= GET QUERY =================
 
-		if (Array.isArray(args) && args.length > 0) {
-			text = args.join(' ').trim();
-		} else {
-			text =
-				message.message?.conversation ||
-				message.message?.extendedTextMessage?.text ||
-				'';
+        let text = '';
 
-			// Remove ".song"
-			text = text.replace(/^\.song\s*/i, '').trim();
-		}
+        if (Array.isArray(args) && args.length > 0) {
 
-		// ================= EMPTY QUERY FIX =================
+            text = args.join(' ').trim();
 
-		if (!text) {
-			await sock.sendMessage(chatId, {
-				text:
+        } else {
+
+            text =
+                message.message?.conversation ||
+                message.message?.extendedTextMessage?.text ||
+                '';
+
+            text = text
+                .replace(/^\.song\s*/i, '')
+                .trim();
+        }
+
+        // ================= EMPTY QUERY =================
+
+        if (!text) {
+
+            return await sock.sendMessage(chatId, {
+                react: {
+                    text: '⚠️',
+                    key: message.key
+                }
+            });
+
+            return await sock.sendMessage(chatId, {
+                text:
 `╭━━━〔 🎵 Song Downloader 〕━━━╮
 ┃ ✦ Please provide
-┃ ✦ a song name or link
+┃ ✦ a song name or YouTube link
 ┃
 ┃ 📌 Example:
 ┃ ✦ .song faded
 ┃ ✦ .song believer
 ┃ ✦ .song https://youtu.be/xxxx
 ╰━━━━━━━━━━━━━━━━━━╯`
-			}, {
-				quoted: message
-			});
+            }, {
+                quoted: message
+            });
+        }
 
-			return;
-		}
+        let video;
 
-		let video;
+        // ================= URL / SEARCH =================
 
-		// ================= YOUTUBE URL =================
+        if (
+            text.includes('youtube.com') ||
+            text.includes('youtu.be')
+        ) {
 
-		if (
-			text.includes('youtube.com') ||
-			text.includes('youtu.be')
-		) {
+            video = {
+                url: text,
+                title: 'YouTube Audio',
+                thumbnail:
+'https://o.uguu.se/kYrlzKnK.jpg',
+                timestamp: 'Unknown',
+                seconds: 180,
+                author: {
+                    name: 'Unknown Artist'
+                }
+            };
 
-			video = {
-				url: text,
-				title: 'YouTube Audio',
-				thumbnail: 'https://i.imgur.com/7vQZ6oA.jpeg',
-				timestamp: 'Unknown'
-			};
+        } else {
 
-		} else {
+            // SEARCH REACTION
+            await sock.sendMessage(chatId, {
+                react: {
+                    text: '🔍',
+                    key: message.key
+                }
+            });
 
-			// 🔍 Searching React
-			await sock.sendMessage(chatId, {
-				react: {
-					text: '🔍',
-					key: message.key
-				}
-			});
+            const search = await yts(text);
 
-			const search = await yts(text);
+            if (!search.videos.length) {
 
-			if (!search || !search.videos.length) {
+                return await sock.sendMessage(chatId, {
+                    react: {
+                        text: '❌',
+                        key: message.key
+                    }
+                });
 
-				await sock.sendMessage(chatId, {
-					text:
+                return await sock.sendMessage(chatId, {
+                    text:
 `╭━━━〔 ❌ Song Not Found 〕━━━╮
 ┃ ✦ No matching songs found
 ┃ ✦ Try another song name
 ╰━━━━━━━━━━━━━━━━━━╯`
-				}, {
-					quoted: message
-				});
+                }, {
+                    quoted: message
+                });
+            }
 
-				return;
-			}
+            video = search.videos[0];
+        }
 
-			video = search.videos[0];
-		}
+        // ================= DETAILS =================
 
-		// ================= DOWNLOADING MESSAGE =================
+        await sock.sendMessage(chatId, {
 
-		await sock.sendMessage(chatId, {
-			image: {
-				url: video.thumbnail
-			},
-			caption:
+            image: {
+                url: video.thumbnail
+            },
+
+            caption:
 `╭━━━〔 🎵 Audio Details 〕━━━╮
 ┃ ✦ 🎧 Title:
 ┃ ✦ ${video.title}
@@ -205,231 +141,280 @@ async function songCommand(sock, chatId, message, args = []) {
 ┃ ✦ 🔍 Status:
 ┃ ✦ Downloading Audio...
 ╰━━━━━━━━━━━━━━━━━━╯`
-		}, {
-			quoted: message
-		});
 
-		// ⬇️ Download React
-		await sock.sendMessage(chatId, {
-			react: {
-				text: '⬇️',
-				key: message.key
-			}
-		});
+        }, {
+            quoted: message
+        });
 
-		// ================= API FALLBACK =================
+        // DOWNLOAD REACTION
+        await sock.sendMessage(chatId, {
+            react: {
+                text: '⬇️',
+                key: message.key
+            }
+        });
 
-		let audioData;
-		let audioBuffer;
-		let downloadSuccess = false;
+        // ================= API FALLBACK =================
 
-		const apiMethods = [
-			{
-				name: 'EliteProTech',
-				method: () => getEliteProTechDownloadByUrl(video.url)
-			},
-			{
-				name: 'Yupra',
-				method: () => getYupraDownloadByUrl(video.url)
-			},
-			{
-				name: 'Okatsu',
-				method: () => getOkatsuDownloadByUrl(video.url)
-			}
-		];
+        let audioData;
 
-		for (const apiMethod of apiMethods) {
+        const apiMethods = [
 
-			try {
+            // API 1
+            {
+                name: 'Widipe',
 
-				audioData = await apiMethod.method();
+                method: async () => {
 
-				const audioUrl =
-					audioData.download ||
-					audioData.dl ||
-					audioData.url;
+                    const res = await axios.get(
+`https://widipe.com/download/ytmp3?url=${encodeURIComponent(video.url)}`
+                    );
 
-				if (!audioUrl) {
-					continue;
-				}
+                    if (
+                        res.data &&
+                        res.data.status &&
+                        res.data.result &&
+                        res.data.result.download
+                    ) {
 
-				const audioResponse = await axios.get(audioUrl, {
-					responseType: 'arraybuffer',
-					timeout: 90000,
-					maxContentLength: Infinity,
-					maxBodyLength: Infinity,
-					decompress: true,
-					validateStatus: s => s >= 200 && s < 400,
-					headers: {
-						'User-Agent': 'Mozilla/5.0',
-						'Accept': '*/*',
-						'Accept-Encoding': 'identity'
-					}
-				});
+                        return {
+                            download:
+                                res.data.result.download
+                        };
+                    }
 
-				audioBuffer = Buffer.from(audioResponse.data);
+                    throw new Error('Widipe failed');
+                }
+            },
 
-				if (audioBuffer && audioBuffer.length > 0) {
-					downloadSuccess = true;
-					break;
-				}
+            // API 2
+            {
+                name: 'Nexoracle',
 
-			} catch (err) {
+                method: async () => {
 
-				console.log(`${apiMethod.name} failed:`, err.message);
+                    const res = await axios.get(
+`https://api.nexoracle.com/downloader/youtube/audio?url=${encodeURIComponent(video.url)}`
+                    );
 
-				continue;
-			}
-		}
+                    if (
+                        res.data &&
+                        res.data.result &&
+                        res.data.result.audio
+                    ) {
 
-		// ================= ALL FAILED =================
+                        return {
+                            download:
+                                res.data.result.audio
+                        };
+                    }
 
-		if (!downloadSuccess || !audioBuffer) {
-			throw new Error(
-				'All download sources failed.'
-			);
-		}
+                    throw new Error('Nexoracle failed');
+                }
+            },
 
-		// ================= FORMAT DETECTION =================
+            // API 3
+            {
+                name: 'Lann',
 
-		const firstBytes = audioBuffer.slice(0, 12);
-		const asciiSignature = firstBytes.toString('ascii', 4, 8);
+                method: async () => {
 
-		let fileExtension = 'mp3';
+                    const res = await axios.get(
+`https://api.lannn.me/api/download/ytmp3?url=${encodeURIComponent(video.url)}`
+                    );
 
-		if (asciiSignature === 'ftyp') {
-			fileExtension = 'm4a';
-		}
+                    if (
+                        res.data &&
+                        res.data.status &&
+                        res.data.data &&
+                        res.data.data.download
+                    ) {
 
-		// ================= CONVERT TO MP3 =================
+                        return {
+                            download:
+                                res.data.data.download
+                        };
+                    }
 
-		let finalBuffer = audioBuffer;
+                    throw new Error('Lann failed');
+                }
+            }
+        ];
 
-		if (fileExtension !== 'mp3') {
+        let success = false;
 
-			finalBuffer = await toAudio(
-				audioBuffer,
-				fileExtension
-			);
+        for (const apiMethod of apiMethods) {
 
-			if (!finalBuffer || finalBuffer.length === 0) {
-				throw new Error('Audio conversion failed');
-			}
-		}
+            try {
 
-		// ================= SEND AUDIO =================
+                audioData =
+                    await apiMethod.method();
 
-		await sock.sendMessage(chatId, {
+                if (
+                    audioData &&
+                    audioData.download
+                ) {
 
-			audio: finalBuffer,
+                    success = true;
+                    break;
+                }
 
-			mimetype: 'audio/mpeg',
+            } catch (err) {
 
-			fileName: `${(
-				audioData.title ||
-				video.title ||
-				'song'
-			)
-				.replace(/[^\w\s-]/g, '')
-				.trim()}.mp3`,
+                console.log(
+`${apiMethod.name} failed:`,
+                    err.message
+                );
+            }
+        }
 
-			ptt: false
+        // ================= FAILED =================
 
-		}, {
-			quoted: message
-		});
+        if (!success) {
 
-		// ✅ Success React
-		await sock.sendMessage(chatId, {
-			react: {
-				text: '✅',
-				key: message.key
-			}
-		});
+            await sock.sendMessage(chatId, {
+                react: {
+                    text: '❌',
+                    key: message.key
+                }
+            });
 
-		// ================= CLEANUP =================
-
-		try {
-
-			const tempDir = path.join(__dirname, '../temp');
-
-			if (fs.existsSync(tempDir)) {
-
-				const files = fs.readdirSync(tempDir);
-
-				const now = Date.now();
-
-				files.forEach(file => {
-
-					const filePath = path.join(tempDir, file);
-
-					try {
-
-						const stats = fs.statSync(filePath);
-
-						if (now - stats.mtimeMs > 10000) {
-
-							if (
-								file.endsWith('.mp3') ||
-								file.endsWith('.m4a') ||
-								/^\d+\.(mp3|m4a)$/.test(file)
-							) {
-								fs.unlinkSync(filePath);
-							}
-						}
-
-					} catch {}
-				});
-			}
-
-		} catch {}
-
-	} catch (err) {
-
-		console.error('Song command error:', err);
-
-		// ❌ Error React
-		await sock.sendMessage(chatId, {
-			react: {
-				text: '❌',
-				key: message.key
-			}
-		});
-
-		let errorMessage =
+            return await sock.sendMessage(chatId, {
+                text:
 `╭━━━〔 ❌ Download Failed 〕━━━╮
 ┃ ✦ Failed to download song
 ┃ ✦ Please try again later
-╰━━━━━━━━━━━━━━━━━━╯`;
-		if (
-			err.message &&
-			err.message.includes('blocked')
-		) {
+╰━━━━━━━━━━━━━━━━━━╯`
+            }, {
+                quoted: message
+            });
+        }
 
-			errorMessage =
-`╭━━━〔 🚫 Region Blocked 〕━━━╮
-┃ ✦ Audio unavailable
-┃ ✦ In your current region
-╰━━━━━━━━━━━━━━━━━━╯`;
+        // ================= CUSTOM METADATA =================
 
-		} else if (
-			err.message &&
-			err.message.includes('All download sources failed')
-		) {
+        const realTitle =
+            video.title || 'Unknown Song';
 
-			errorMessage =
-`╭━━━〔 ❌ Server Failed 〕━━━╮
-┃ ✦ All download servers failed
+        const customArtist =
+            '𝐋ɪɴᴜх 𝐒ᴇʀ 🧃🕊️';
+
+        // COVER PIC PATH
+        const customThumbnail =
+'https://o.uguu.se/kYrlzKnK.jpg';
+
+        // ================= SEND AUDIO =================
+
+        await sock.sendMessage(chatId, {
+
+            audio: {
+                url: audioData.download
+            },
+
+            mimetype: 'audio/mpeg',
+
+            ptt: false,
+
+            // FILE NAME
+            fileName:
+`${realTitle}.mp3`,
+
+            // AUDIO TITLE
+            title:
+                realTitle,
+
+            // AUDIO ARTIST
+            performer:
+                customArtist,
+
+            // AUDIO ALBUM
+            caption:
+                customArtist,
+
+            seconds:
+                video.seconds || 180,
+
+            waveform: [
+                100, 0, 100, 0,
+                100, 0, 100, 0
+            ],
+
+            // AUDIO COVER PIC
+            jpegThumbnail:
+                Buffer.from(
+                    await (
+                        await axios.get(
+                            customThumbnail,
+                            {
+                                responseType:
+                                    'arraybuffer'
+                            }
+                        )
+                    ).data
+                ),
+
+            // WHATSAPP MUSIC CARD
+            contextInfo: {
+                externalAdReply: {
+
+                    showAdAttribution:
+                        false,
+
+                    title:
+                        realTitle,
+
+                    body:
+                        `🎤 ${customArtist}`,
+
+                    mediaType: 1,
+
+                    renderLargerThumbnail:
+                        true,
+
+                    thumbnailUrl:
+                        customThumbnail,
+
+                    sourceUrl:
+                        video.url
+                }
+            }
+
+        }, {
+            quoted: message
+        });
+
+        // SUCCESS REACTION
+        await sock.sendMessage(chatId, {
+            react: {
+                text: '✅',
+                key: message.key
+            }
+        });
+
+    } catch (err) {
+
+        console.error(
+            'Song command error:',
+            err
+        );
+
+        // ERROR REACTION
+        await sock.sendMessage(chatId, {
+            react: {
+                text: '❌',
+                key: message.key
+            }
+        });
+
+        await sock.sendMessage(chatId, {
+            text:
+`╭━━━〔 ❌ Download Failed 〕━━━╮
+┃ ✦ Failed to download song
 ┃ ✦ Please try again later
-╰━━━━━━━━━━━━━━━━━━╯`;
-		}
-
-		await sock.sendMessage(chatId, {
-			text: errorMessage
-		}, {
-			quoted: message
-		});
-	}
+╰━━━━━━━━━━━━━━━━━━╯`
+        }, {
+            quoted: message
+        });
+    }
 }
 
 module.exports = songCommand;
