@@ -1,5 +1,3 @@
-const { Innertube } = require("youtubei.js");
-
 module.exports = async function ytCommand(sock, chatId, message) {
 
     try {
@@ -27,7 +25,7 @@ module.exports = async function ytCommand(sock, chatId, message) {
             }, { quoted: message });
         }
 
-        // LOADING REACTION
+        // LOADING
         await sock.sendMessage(chatId, {
             react: {
                 text: "🔍",
@@ -35,52 +33,34 @@ module.exports = async function ytCommand(sock, chatId, message) {
             },
         });
 
-        const youtube = await Innertube.create();
+        // API
+        const api =
+`https://api.vevioz.com/api/button/mp4?url=${encodeURIComponent(url)}`;
 
-        const video = await youtube.getInfo(url);
+        // VIDEO ID
+        const idMatch =
+            url.match(
+                /(?:youtu\.be\/|youtube\.com\/watch\?v=)([^&]+)/i
+            );
 
-        if (!video) {
-
-            return await sock.sendMessage(chatId, {
-                text:
-`╭━━━〔 🚫 Video Not Found 〕━━━╮
-┃ ✦ Invalid or unavailable video
-╰━━━━━━━━━━━━━━━━━━╯`
-            }, { quoted: message });
-        }
-
-        const title = video.basic_info.title;
-        const author = video.basic_info.author;
-        const duration = Math.floor(video.basic_info.duration / 60);
-        const views = video.basic_info.view_count;
+        const videoId = idMatch ? idMatch[1] : null;
 
         const thumb =
-            video.basic_info.thumbnail[0].url;
+            `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
 
-        const caption =
-`╭━━━〔 🎥 YouTube Downloader 〕━━━╮
-┃ ✦ 🎬 Title:
-┃ ✦ ${title}
-┃
-┃ ✦ 👤 Channel:
-┃ ✦ ${author}
-┃
-┃ ✦ 👁 Views:
-┃ ✦ ${views}
-┃
-┃ ✦ ⏱ Duration:
-┃ ✦ ${duration} Minutes
-┃
-┣━━━〔 📥 Download Options 〕━━━┫
-┃ ✦ Reply *1* for Audio
-┃ ✦ Reply *2* for Video
-╰━━━━━━━━━━━━━━━━━━╯`;
-
+        // MENU
         const sentMsg = await sock.sendMessage(
             chatId,
             {
                 image: { url: thumb },
-                caption,
+                caption:
+`╭━━━〔 🎥 YouTube Downloader 〕━━━╮
+┃ ✦ Choose download type
+┃
+┣━━━〔 📥 Download Options 〕━━━┫
+┃ ✦ Reply *1* for Audio
+┃ ✦ Reply *2* for Video
+╰━━━━━━━━━━━━━━━━━━╯`
             },
             { quoted: message }
         );
@@ -114,18 +94,17 @@ module.exports = async function ytCommand(sock, chatId, message) {
                         },
                     });
 
-                    const audio = video.streaming_data.adaptive_formats.find(
-                        f => f.has_audio && !f.has_video
-                    );
+                    const audioUrl =
+`https://api.vevioz.com/api/button/mp3?url=${encodeURIComponent(url)}`;
 
                     await sock.sendMessage(
                         chatId,
                         {
                             audio: {
-                                url: audio.url
+                                url: audioUrl
                             },
                             mimetype: "audio/mp4",
-                            fileName: `${title}.mp3`,
+                            fileName: "youtube-audio.mp3",
                             ptt: false,
                         },
                         { quoted: m }
@@ -151,23 +130,18 @@ module.exports = async function ytCommand(sock, chatId, message) {
                         },
                     });
 
-                    const vid = video.streaming_data.formats.find(
-                        f => f.has_video && f.has_audio
-                    );
-
                     await sock.sendMessage(
                         chatId,
                         {
                             video: {
-                                url: vid.url
+                                url: api
                             },
                             mimetype: "video/mp4",
-                            fileName: `${title}.mp4`,
+                            fileName: "youtube-video.mp4",
                             caption:
 `╭━━━〔 🎬 Video Downloaded 〕━━━╮
-┃ ✦ 📹 ${title}
-┃
 ┃ ✦ ✅ Download Completed
+┃ ✦ 📥 Video Sent Successfully
 ╰━━━━━━━━━━━━━━━━━━╯`
                         },
                         { quoted: m }
