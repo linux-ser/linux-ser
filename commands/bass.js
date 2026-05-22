@@ -275,3 +275,5 @@ module.exports = {
     }
 
 };
+
+module.exports = bassCommand;
