@@ -245,10 +245,10 @@ async function slowedCommand(
         NodeID3.write({
 
             title:
-                '♫ 𝐒ʟᴏᴡᴇᴅ + 𝐑ᴇᴠᴇʀʙ',
+                '♪ 𝐕ɪʙᴇ 𝐁ʏ 𝐋ꜱ',
 
             artist:
-                '𝐋ɪɴᴜх 𝐒ᴇʀ',
+                '𝐋ɪɴᴜх 𝐒ᴇʀ 🧃🕊️',
 
             album:
                 '🎶 𝐕ɪʙᴇꜱ',
@@ -288,15 +288,19 @@ async function slowedCommand(
             chatId,
             {
 
-                audio:
-                    fs.readFileSync(
-                        outputPath
-                    ),
+                audio: {
+                    url: outputPath
+                },
 
                 mimetype:
                     'audio/mpeg',
 
                 ptt: false,
+
+                seconds: 180,
+
+                waveform:
+                    [99,0,99,0,99,0,99],
 
                 fileName:
                     'linuxser.mp3',
@@ -307,29 +311,7 @@ async function slowedCommand(
                             __dirname,
                             '../assets/bot_image.jpg'
                         )
-                    ),
-
-                contextInfo: {
-
-                    externalAdReply: {
-
-                        title:
-                            '♫ 𝐒ʟᴏᴡᴇᴅ + 𝐑ᴇᴠᴇʀʙ',
-
-                        body:
-                            '🎶 Smooth Music Effect',
-
-                        thumbnailUrl:
-                            'https://o.uguu.se/kYrlzKnK.jpg',
-
-                        mediaType: 1,
-
-                        renderLargerThumbnail:
-                            true
-
-                    }
-
-                }
+                    )
 
             },
             {
@@ -392,6 +374,16 @@ async function slowedCommand(
         console.log(
             'SLOWED ERROR:',
             e
+        );
+
+        await sock.sendMessage(
+            chatId,
+            {
+                react: {
+                    text: '❌',
+                    key: message.key
+                }
+            }
         );
 
         await sock.sendMessage(
