@@ -1,47 +1,13 @@
-const fs = require('fs');
-const path = require('path');
 const axios = require('axios');
 const yts = require('yt-search');
-const { Innertube } = require('youtubei.js');
 
 async function songCommand(sock, chatId, message, args = []) {
 
     try {
 
-        await sock.sendMessage(chatId, {
-            react: {
-                text: '🎵',
-                key: message.key
-            }
-        });
+        let query = args.join(' ').trim();
 
-        let query = '';
-
-        if (args.length > 0) {
-
-            query = args.join(' ').trim();
-
-        } else {
-
-            const text =
-                message.message?.conversation ||
-                message.message?.extendedTextMessage?.text ||
-                '';
-
-            query = text
-                .replace(/^\.song\s*/i, '')
-                .trim();
-        }
-
-        // EMPTY QUERY
         if (!query) {
-
-            await sock.sendMessage(chatId, {
-                react: {
-                    text: '⚠️',
-                    key: message.key
-                }
-            });
 
             return await sock.sendMessage(chatId, {
                 text:
@@ -57,14 +23,7 @@ async function songCommand(sock, chatId, message, args = []) {
             });
         }
 
-        // SEARCH SONG
-        await sock.sendMessage(chatId, {
-            react: {
-                text: '🔍',
-                key: message.key
-            }
-        });
-
+        // SEARCH
         const search = await yts(query);
 
         if (!search.videos.length) {
@@ -73,7 +32,6 @@ async function songCommand(sock, chatId, message, args = []) {
                 text:
 `╭━━━〔 ❌ Song Not Found 〕━━━╮
 ┃ ✦ No matching songs found
-┃ ✦ Try another keyword
 ╰━━━━━━━━━━━━━━━━━━╯`
             }, {
                 quoted: message
@@ -91,133 +49,82 @@ async function songCommand(sock, chatId, message, args = []) {
 
             caption:
 `╭━━━〔 🎵 Audio Details 〕━━━╮
-┃ ✦ 🎧 Title: ${video.title}
+┃ ✦ 🎧 ${video.title}
+┃ ✦ 🎤 ${video.author.name}
+┃ ✦ ⏱ ${video.timestamp}
 ┃
-┃ ✦ 🎤 Artist: ${video.author.name}
-┃
-┃ ✦ ⏱ Duration: ${video.timestamp}
-┃
-┃ ✦ 🔍 Status: Downloading Audio...
+┃ ✦ Downloading audio...
 ╰━━━━━━━━━━━━━━━━━━╯`
 
         }, {
             quoted: message
         });
 
-        // DOWNLOAD REACTION
-        await sock.sendMessage(chatId, {
-            react: {
-                text: '⬇️',
-                key: message.key
-            }
-        });
+        // API
+        const api =
+`https://widipe.com/download/ytmp3?url=${encodeURIComponent(video.url)}`;
 
-        // YOUTUBE DOWNLOAD
-        const youtube = await Innertube.create();
+        const res = await axios.get(api);
 
-        const info =
-            await youtube.getBasicInfo(video.videoId);
+        if (
+            !res.data ||
+            !res.data.result ||
+            !res.data.result.download
+        ) {
 
-        const stream =
-            await youtube.download(video.videoId, {
-                type: 'audio',
-                quality: 'best'
-            });
-
-        const filePath =
-            path.join(
-                __dirname,
-                `${Date.now()}.mp3`
-            );
-
-        const writeStream =
-            fs.createWriteStream(filePath);
-
-        for await (const chunk of stream) {
-
-            writeStream.write(chunk);
+            throw new Error('Download failed');
         }
 
-        writeStream.end();
+        const audioUrl =
+            res.data.result.download;
 
-        await new Promise(resolve =>
-            writeStream.on('finish', resolve)
-        );
+        // AUDIO BUFFER
+        const audioRes =
+            await axios.get(audioUrl, {
+                responseType:
+                    'arraybuffer'
+            });
 
-        // CUSTOM INFO
-        const customArtist =
-            '𝐋ɪɴᴜх 𝐒ᴇʀ 🧃🕊️';
+        const audioBuffer =
+            Buffer.from(audioRes.data);
 
-        const customThumbnail =
-'https://o.uguu.se/kYrlzKnK.jpg';
+        // THUMBNAIL
+        const thumb =
+            await axios.get(
+                video.thumbnail,
+                {
+                    responseType:
+                        'arraybuffer'
+                }
+            );
 
         // SEND AUDIO
         await sock.sendMessage(chatId, {
 
-            audio:
-                fs.readFileSync(filePath),
+            audio: audioBuffer,
 
             mimetype:
                 'audio/mpeg',
 
-            ptt: false,
-
             fileName:
 `${video.title}.mp3`,
+
+            ptt: false,
 
             title:
                 video.title,
 
             performer:
-                customArtist,
-
-            seconds:
-                video.seconds,
+                '𝐋ɪɴᴜх 𝐒ᴇʀ 🧃🕊️',
 
             jpegThumbnail:
                 Buffer.from(
-                    await (
-                        await axios.get(
-                            customThumbnail,
-                            {
-                                responseType:
-                                    'arraybuffer'
-                            }
-                        )
-                    ).data
-                ),
-
-            contextInfo: {
-                externalAdReply: {
-
-                    showAdAttribution:
-                        false,
-
-                    title:
-                        video.title,
-
-                    body:
-                        `🎤 ${customArtist}`,
-
-                    mediaType: 1,
-
-                    renderLargerThumbnail:
-                        true,
-
-                    thumbnailUrl:
-                        customThumbnail,
-
-                    sourceUrl:
-                        video.url
-                }
-            }
+                    thumb.data
+                )
 
         }, {
             quoted: message
         });
-
-        // DELETE FILE
-        fs.unlinkSync(filePath);
 
         // SUCCESS
         await sock.sendMessage(chatId, {
@@ -229,20 +136,13 @@ async function songCommand(sock, chatId, message, args = []) {
 
     } catch (err) {
 
-        console.error(err);
-
-        await sock.sendMessage(chatId, {
-            react: {
-                text: '❌',
-                key: message.key
-            }
-        });
+        console.log(err);
 
         await sock.sendMessage(chatId, {
             text:
 `╭━━━〔 ❌ Download Failed 〕━━━╮
 ┃ ✦ Unable to download audio
-┃ ✦ Try again later
+┃ ✦ Try another song later
 ╰━━━━━━━━━━━━━━━━━━╯`
         }, {
             quoted: message
