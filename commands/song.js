@@ -1,5 +1,7 @@
 const axios = require('axios');
 const yts = require('yt-search');
+const fs = require('fs');
+const path = require('path');
 
 const AXIOS_DEFAULTS = {
 	timeout: 60000,
@@ -309,11 +311,26 @@ async function songCommand(
 				thumb.data
 			);
 
+		// ================= SAVE AUDIO =================
+
+		const tempPath =
+			path.join(
+				__dirname,
+				`song_${Date.now()}.mp3`
+			);
+
+		fs.writeFileSync(
+			tempPath,
+			audioBuffer
+		);
+
 		// ================= SEND AUDIO =================
 
 		await sock.sendMessage(chatId, {
 
-			audio: audioBuffer,
+			audio: {
+				url: tempPath
+			},
 
 			mimetype:
 				'audio/mpeg',
@@ -361,6 +378,21 @@ async function songCommand(
 		}, {
 			quoted: message
 		});
+
+		// ================= DELETE FILE =================
+
+		setTimeout(() => {
+
+			if (
+				fs.existsSync(tempPath)
+			) {
+
+				fs.unlinkSync(
+					tempPath
+				);
+			}
+
+		}, 10000);
 
 		// ================= SUCCESS =================
 
