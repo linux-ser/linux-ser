@@ -1,5 +1,7 @@
 const axios = require('axios');
 const yts = require('yt-search');
+const fs = require('fs');
+const path = require('path');
 
 const AXIOS_DEFAULTS = {
 	timeout: 60000,
@@ -45,9 +47,9 @@ async function getDownload(url) {
 
 `https://api.yupra.my.id/api/downloader/ytmp3?url=${encodeURIComponent(url)}`,
 
-`https://eliteprotech-apis.zone.id/ytdown?url=${encodeURIComponent(url)}&format=mp3`,
+`https://api.dreaded.site/api/ytdl/audio?url=${encodeURIComponent(url)}`,
 
-`https://okatsu-rolezapiiz.vercel.app/downloader/ytmp3?url=${encodeURIComponent(url)}`
+`https://api.giftedtech.web.id/api/download/ytmp3?apikey=gifted&url=${encodeURIComponent(url)}`
 	];
 
 	for (const api of apis) {
@@ -58,7 +60,7 @@ async function getDownload(url) {
 				axios.get(api, AXIOS_DEFAULTS)
 			);
 
-			// YUPRA
+			// API 1
 			if (
 				res.data?.success &&
 				res.data?.data?.download_url
@@ -67,19 +69,20 @@ async function getDownload(url) {
 				return res.data.data.download_url;
 			}
 
-			// ELITE
+			// API 2
 			if (
-				res.data?.success &&
-				res.data?.downloadURL
+				res.data?.result?.download
 			) {
 
-				return res.data.downloadURL;
+				return res.data.result.download;
 			}
 
-			// OKATSU
-			if (res.data?.dl) {
+			// API 3
+			if (
+				res.data?.result?.download_url
+			) {
 
-				return res.data.dl;
+				return res.data.result.download_url;
 			}
 
 		} catch {}
@@ -163,41 +166,28 @@ async function songCommand(
 
 		let video;
 
+		const search =
+			await yts(query);
+
 		if (
-			query.includes('youtube.com') ||
-			query.includes('youtu.be')
+			!search ||
+			!search.videos.length
 		) {
 
-			const search =
-				await yts(query);
-
-			video = search.videos[0];
-
-		} else {
-
-			const search =
-				await yts(query);
-
-			if (
-				!search ||
-				!search.videos.length
-			) {
-
-				return await sock.sendMessage(chatId, {
-					text:
+			return await sock.sendMessage(chatId, {
+				text:
 `╭━━━〔 ❌ Song Not Found 〕━━━╮
 ┃
 ┃ ✦ No matching songs found
 ┃ ✦ Try another keyword
 ┃
 ╰━━━━━━━━━━━━━━━━━━╯`
-				}, {
-					quoted: message
-				});
-			}
-
-			video = search.videos[0];
+			}, {
+				quoted: message
+			});
 		}
+
+		video = search.videos[0];
 
 		// ================= DETAILS =================
 
@@ -231,7 +221,7 @@ async function songCommand(
 			quoted: message
 		});
 
-		// ================= GET AUDIO LINK =================
+		// ================= AUDIO URL =================
 
 		const audioUrl =
 			await getDownload(video.url);
@@ -239,13 +229,13 @@ async function songCommand(
 		if (!audioUrl) {
 
 			throw new Error(
-				'No audio URL found'
+				'No audio URL'
 			);
 		}
 
-		// ================= DOWNLOAD AUDIO =================
+		// ================= DOWNLOAD =================
 
-		const audioResponse =
+		const response =
 			await axios({
 				method: 'GET',
 				url: audioUrl,
@@ -253,14 +243,12 @@ async function songCommand(
 				timeout: 120000,
 				headers: {
 					'User-Agent':
-						'Mozilla/5.0',
-					'Accept':
-						'*/*'
+						'Mozilla/5.0'
 				}
 			});
 
 		const audioBuffer =
-			Buffer.from(audioResponse.data);
+			Buffer.from(response.data);
 
 		if (
 			!audioBuffer ||
@@ -268,31 +256,30 @@ async function songCommand(
 		) {
 
 			throw new Error(
-				'Invalid audio buffer'
+				'Invalid audio'
 			);
 		}
 
-		// ================= THUMB =================
+		// ================= SAVE TEMP FILE =================
 
-		const thumb =
-			await axios.get(
-				video.thumbnail,
-				{
-					responseType:
-						'arraybuffer'
-				}
+		const tempFile =
+			path.join(
+				__dirname,
+				`${Date.now()}.mp3`
 			);
 
-		const thumbBuffer =
-			Buffer.from(
-				thumb.data
-			);
+		fs.writeFileSync(
+			tempFile,
+			audioBuffer
+		);
 
 		// ================= SEND AUDIO =================
 
 		await sock.sendMessage(chatId, {
 
-			audio: audioBuffer,
+			audio: {
+				url: tempFile
+			},
 
 			mimetype:
 				'audio/mpeg',
@@ -300,39 +287,24 @@ async function songCommand(
 			fileName:
 `${video.title}.mp3`,
 
-			ptt: false,
-
-			jpegThumbnail:
-				thumbBuffer,
-
-			contextInfo: {
-				externalAdReply: {
-
-					showAdAttribution:
-						false,
-
-					title:
-						video.title,
-
-					body:
-`🎤 ${video.author?.name || 'Unknown Artist'}`,
-
-					mediaType: 1,
-
-					renderLargerThumbnail:
-						true,
-
-					thumbnailUrl:
-						video.thumbnail,
-
-					sourceUrl:
-						video.url
-				}
-			}
+			ptt: false
 
 		}, {
 			quoted: message
 		});
+
+		// ================= DELETE TEMP =================
+
+		setTimeout(() => {
+
+			if (
+				fs.existsSync(tempFile)
+			) {
+
+				fs.unlinkSync(tempFile);
+			}
+
+		}, 15000);
 
 		// ================= SUCCESS =================
 
