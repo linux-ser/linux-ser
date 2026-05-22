@@ -5,7 +5,8 @@ async function songCommand(sock, chatId, message, args = []) {
 
     try {
 
-        // START REACTION
+        // ================= START REACTION =================
+
         await sock.sendMessage(chatId, {
             react: {
                 text: '🎵',
@@ -17,7 +18,10 @@ async function songCommand(sock, chatId, message, args = []) {
 
         let text = '';
 
-        if (Array.isArray(args) && args.length > 0) {
+        if (
+            Array.isArray(args) &&
+            args.length > 0
+        ) {
 
             text = args.join(' ').trim();
 
@@ -60,7 +64,7 @@ async function songCommand(sock, chatId, message, args = []) {
 
         let video;
 
-        // ================= URL / SEARCH =================
+        // ================= SEARCH =================
 
         if (
             text.includes('youtube.com') ||
@@ -81,7 +85,6 @@ async function songCommand(sock, chatId, message, args = []) {
 
         } else {
 
-            // SEARCH REACTION
             await sock.sendMessage(chatId, {
                 react: {
                     text: '🔍',
@@ -89,7 +92,8 @@ async function songCommand(sock, chatId, message, args = []) {
                 }
             });
 
-            const search = await yts(text);
+            const search =
+                await yts(text);
 
             if (!search.videos.length) {
 
@@ -124,22 +128,28 @@ async function songCommand(sock, chatId, message, args = []) {
 
             caption:
 `╭━━━〔 🎵 Audio Details 〕━━━╮
-┃ ✦ 🎧 Title: ${video.title}
+┃ ✦ 🎧 Title:
+┃ ✦ ${video.title}
 ┃
-┃ ✦ 🎤 Artist: ${video.author?.name || 'Unknown Artist'}
+┃ ✦ 🎤 Artist:
+┃ ✦ ${video.author?.name || 'Unknown Artist'}
 ┃
-┃ ✦ 💿 Album: YouTube Music
+┃ ✦ 💿 Album:
+┃ ✦ YouTube Music
 ┃
-┃ ✦ ⏱ Duration: ${video.timestamp}
+┃ ✦ ⏱ Duration:
+┃ ✦ ${video.timestamp}
 ┃
-┃ ✦ 🔍 Status: Downloading Audio...
+┃ ✦ 🔍 Status:
+┃ ✦ Downloading Audio...
 ╰━━━━━━━━━━━━━━━━━━╯`
 
         }, {
             quoted: message
         });
 
-        // DOWNLOAD REACTION
+        // ================= DOWNLOAD REACTION =================
+
         await sock.sendMessage(chatId, {
             react: {
                 text: '⬇️',
@@ -149,42 +159,42 @@ async function songCommand(sock, chatId, message, args = []) {
 
         // ================= DOWNLOAD AUDIO =================
 
+        let audioBuffer = null;
+
         const downloadApis = [
 
-            `https://widipe.com/download/ytmp3?url=${encodeURIComponent(video.url)}`,
+            // API 1
+            async () => {
 
-            `https://api.vevioz.com/api/button/mp3/${video.url}`
-
-        ];
-
-        let audioUrl = null;
-
-        for (const api of downloadApis) {
-
-            try {
-
-                const res = await axios.get(api, {
-                    timeout: 60000,
-                    headers: {
-                        'User-Agent':
-                            'Mozilla/5.0'
+                const res = await axios.get(
+`https://widipe.com/download/ytmp3?url=${encodeURIComponent(video.url)}`,
+                    {
+                        timeout: 60000
                     }
-                });
+                );
 
-                // WIDIPE
                 if (
                     res.data &&
                     res.data.result &&
                     res.data.result.download
                 ) {
 
-                    audioUrl =
-                        res.data.result.download;
-
-                    break;
+                    return res.data.result.download;
                 }
 
-                // VEVIOZ HTML SCRAPE
+                return null;
+            },
+
+            // API 2
+            async () => {
+
+                const res = await axios.get(
+`https://api.vevioz.com/api/button/mp3/${video.url}`,
+                    {
+                        timeout: 60000
+                    }
+                );
+
                 if (typeof res.data === 'string') {
 
                     const match =
@@ -192,24 +202,45 @@ async function songCommand(sock, chatId, message, args = []) {
 /https?:\/\/[^"]+\.mp3/g
                         );
 
-                    if (match && match[0]) {
+                    if (
+                        match &&
+                        match[0]
+                    ) {
 
-                        audioUrl = match[0];
-                        break;
+                        return match[0];
                     }
+                }
+
+                return null;
+            }
+        ];
+
+        let audioUrl = null;
+
+        // GET WORKING URL
+        for (const api of downloadApis) {
+
+            try {
+
+                const result =
+                    await api();
+
+                if (result) {
+
+                    audioUrl = result;
+                    break;
                 }
 
             } catch (e) {
 
                 console.log(
-                    'API failed:',
+                    'Download API failed:',
                     e.message
                 );
             }
         }
 
-        // ================= FAILED =================
-
+        // FAILED
         if (!audioUrl) {
 
             await sock.sendMessage(chatId, {
@@ -222,8 +253,55 @@ async function songCommand(sock, chatId, message, args = []) {
             return await sock.sendMessage(chatId, {
                 text:
 `╭━━━〔 ❌ Download Failed 〕━━━╮
-┃ ✦ Unable to fetch audio
-┃ ✦ Try another song/link
+┃ ✦ Audio source unavailable
+┃ ✦ Try another song later
+╰━━━━━━━━━━━━━━━━━━╯`
+            }, {
+                quoted: message
+            });
+        }
+
+        // ================= FETCH AUDIO BUFFER =================
+
+        try {
+
+            const audioResponse =
+                await axios.get(audioUrl, {
+                    responseType:
+                        'arraybuffer',
+
+                    timeout: 120000,
+
+                    headers: {
+                        'User-Agent':
+                            'Mozilla/5.0'
+                    }
+                });
+
+            audioBuffer =
+                Buffer.from(
+                    audioResponse.data
+                );
+
+        } catch (e) {
+
+            console.log(
+                'Audio fetch failed:',
+                e.message
+            );
+
+            await sock.sendMessage(chatId, {
+                react: {
+                    text: '❌',
+                    key: message.key
+                }
+            });
+
+            return await sock.sendMessage(chatId, {
+                text:
+`╭━━━〔 ❌ Audio Fetch Failed 〕━━━╮
+┃ ✦ Unable to download audio
+┃ ✦ Source server blocked
 ╰━━━━━━━━━━━━━━━━━━╯`
             }, {
                 quoted: message
@@ -233,7 +311,8 @@ async function songCommand(sock, chatId, message, args = []) {
         // ================= CUSTOM METADATA =================
 
         const realTitle =
-            video.title || 'Unknown Song';
+            video.title ||
+            'Unknown Song';
 
         const customArtist =
             '𝐋ɪɴᴜх 𝐒ᴇʀ 🧃🕊️';
@@ -245,11 +324,10 @@ async function songCommand(sock, chatId, message, args = []) {
 
         await sock.sendMessage(chatId, {
 
-            audio: {
-                url: audioUrl
-            },
+            audio: audioBuffer,
 
-            mimetype: 'audio/mpeg',
+            mimetype:
+                'audio/mpeg',
 
             ptt: false,
 
@@ -307,7 +385,8 @@ async function songCommand(sock, chatId, message, args = []) {
             quoted: message
         });
 
-        // SUCCESS REACTION
+        // ================= SUCCESS =================
+
         await sock.sendMessage(chatId, {
             react: {
                 text: '✅',
@@ -322,7 +401,6 @@ async function songCommand(sock, chatId, message, args = []) {
             err
         );
 
-        // ERROR REACTION
         await sock.sendMessage(chatId, {
             react: {
                 text: '❌',
