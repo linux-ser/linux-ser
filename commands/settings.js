@@ -159,6 +159,15 @@ async function settingsCommand(
 
         );
 
+        const antidelete =
+        readJsonSafe(
+
+`${dataDir}/antidelete.json`,
+
+            { enabled: false }
+
+        );
+
         const userGroupData =
         readJsonSafe(
 
@@ -207,6 +216,7 @@ async function settingsCommand(
 ┃ ⌨️ Autotyping : ${autotyping.enabled ? '✅' : '❌'}
 ┃ 🚫 PM Blocker : ${pmblocker.enabled ? '✅' : '❌'}
 ┃ 📞 Anticall : ${anticall.enabled ? '✅' : '❌'}
+┃ 🛡️ AntiDelete : ${antidelete.enabled ? '✅' : '❌'}
 ┃ 😀 Auto React : ${autoReaction ? '✅' : '❌'}
 ┃
 ╰━━━━━━━━━━━━━━━━━━╯`;
