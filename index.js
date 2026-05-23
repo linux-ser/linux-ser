@@ -194,7 +194,7 @@ async function startXeonBotInc() {
 
 ╭──〔 📌 ɪɴꜰᴏ 〕──╮
 ┃ ✦ *ᴏᴡɴᴇʀ:* 𝐋ɪɴᴜх 𝐒ᴇʀ
-┃ ✦ *ᴩʀᴇꜰɪx:* ${global.prefa || '.'}
+┃ ✦ *ᴩʀᴇꜰɪх:* ${global.prefa || '.'}
 ┃ ✦ *ꜱᴛᴀᴛᴜꜱ:* ꜱᴛᴀʙʟᴇ ✅
 ┃ ✦ *ᴛɪᴍᴇ:* ${indianTime}
 ╰━━━━━━━━━━━━━━╯
