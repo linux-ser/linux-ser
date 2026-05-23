@@ -100,7 +100,24 @@ async function handleAntideleteCommand(sock, chatId, message, match) {
     }
 
     saveAntideleteConfig(config);
-    return sock.sendMessage(chatId, { text: `*ᴀɴᴛɪᴅᴇʟᴇᴛᴇ ${match === 'ᴏɴ' ? 'ᴇɴᴀʙʟᴇᴅ' : 'ᴅɪꜱᴀʙʟᴇᴅ'}*` }, {quoted:message});
+    return sock.sendMessage(
+    chatId,
+    {
+        text:
+match === 'on'
+
+? `╭〔 ✅ AntiDelete Enabled 〕╮
+┃ Deleted messages restored
+╰────────────────╯`
+
+: `╭〔 ❌ AntiDelete Disabled 〕╮
+┃ Deleted messages ignored
+╰────────────────╯`
+    },
+    {
+        quoted: message
+    }
+);
 }
 
 // Store incoming messages (also handles anti-view-once by forwarding immediately)
