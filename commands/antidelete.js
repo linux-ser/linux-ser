@@ -87,7 +87,7 @@ async function handleAntideleteCommand(sock, chatId, message, match) {
 
     if (!match) {
         return sock.sendMessage(chatId, {
-            text: `*ᴀɴᴛɪᴅᴇʟᴇᴛᴇ ꜱᴇᴛᴜᴩ*\n\nᴄᴜʀʀᴇɴᴛ ꜱᴛᴀᴛᴜꜱ: ${config.enabled ? '✅ ᴇɴᴀʙʟᴇᴅ' : '❌ ᴅɪꜱᴀʙʟᴇᴅ'}\n\n*..ᴀɴᴛɪᴅᴇʟᴇᴛᴇ ᴏɴ* - ᴇɴᴀʙʟᴇ\n*.ᴀɴᴛɪᴅᴇʟᴇᴛᴇ ᴏꜰꜰ* - ᴅɪꜱᴀʙʟᴇ`
+            text: `*ᴀɴᴛɪᴅᴇʟᴇᴛᴇ ꜱᴇᴛᴜᴩ*\n\nᴄᴜʀʀᴇɴᴛ ꜱᴛᴀᴛᴜꜱ: ${config.enabled ? '✅ ᴇɴᴀʙʟᴇᴅ' : '❌ ᴅɪꜱᴀʙʟᴇᴅ'}\n\n*.ᴀɴᴛɪᴅᴇʟᴇᴛᴇ ᴏɴ* - ᴇɴᴀʙʟᴇ\n*.ᴀɴᴛɪᴅᴇʟᴇᴛᴇ ᴏꜰꜰ* - ᴅɪꜱᴀʙʟᴇ`
         }, {quoted: message});
     }
 
